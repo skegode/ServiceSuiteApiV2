@@ -352,10 +352,18 @@ namespace ServiceSuiteUssdApi.Controllers
                                     if (productId == 0)
                                         return Content("END Invalid product selection. Please try again.", "text/plain", Encoding.UTF8);
 
-                                    int result = loanApplication.insertloan(ussdRequest.MSISDN, loanAmount, productId, entityId, connectionString);
-                                    response = result > 0
-                                        ? "END Your loan application has been submitted successfully."
-                                        : "END Failed to submit loan application. Please try again.";
+                                    var (validCode, validMsg) = loanApplication.ValidateLoan(ussdRequest.MSISDN, entityId, productId, loanAmount, connectionString);
+                                    if (validCode != 200)
+                                    {
+                                        response = $"END {validMsg}";
+                                    }
+                                    else
+                                    {
+                                        int result = loanApplication.insertloan(ussdRequest.MSISDN, loanAmount, productId, entityId, connectionString);
+                                        response = result > 0
+                                            ? "END Your loan application has been submitted successfully."
+                                            : "END Failed to submit loan application. Please try again.";
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
@@ -422,10 +430,18 @@ namespace ServiceSuiteUssdApi.Controllers
                                     if (productId == 0)
                                         return Content("END Invalid product selection. Please try again.", "text/plain", Encoding.UTF8);
 
-                                    int result = loanApplication.insertloan(ussdRequest.MSISDN, loanAmount, productId, entityId, connectionString);
-                                    response = result > 0
-                                        ? "END Your loan application has been submitted successfully."
-                                        : "END Failed to submit loan application. Please try again.";
+                                    var (validCode, validMsg) = loanApplication.ValidateLoan(ussdRequest.MSISDN, entityId, productId, loanAmount, connectionString);
+                                    if (validCode != 200)
+                                    {
+                                        response = $"END {validMsg}";
+                                    }
+                                    else
+                                    {
+                                        int result = loanApplication.insertloan(ussdRequest.MSISDN, loanAmount, productId, entityId, connectionString);
+                                        response = result > 0
+                                            ? "END Your loan application has been submitted successfully."
+                                            : "END Failed to submit loan application. Please try again.";
+                                    }
                                 }
                                 catch (Exception ex)
                                 {

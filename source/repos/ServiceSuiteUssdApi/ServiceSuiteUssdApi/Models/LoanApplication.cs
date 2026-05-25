@@ -5,6 +5,59 @@ namespace ServiceSuiteUssdApi.Models
 {
     public class LoanApplication
     {
+        public (int Code, string Message) ValidateLoan(string phone, int entityId, int productId, decimal amount, string constr)
+        {
+            phone = phone.Length > 12 ? phone.Substring(1, 12) : phone;
+            writelog log = new writelog();
+
+            try
+            {
+                using (SqlConnection con = new SqlConnection(constr))
+                {
+                    con.Open();
+
+                    string accountNo = null;
+                    using (SqlCommand acctCmd = new SqlCommand(
+                        "SELECT TOP 1 AccountNo FROM Borrowers WHERE PhoneNumber = @Phone AND EntityId = @EntityId", con))
+                    {
+                        acctCmd.Parameters.AddWithValue("@Phone", phone);
+                        acctCmd.Parameters.AddWithValue("@EntityId", entityId);
+                        var result = acctCmd.ExecuteScalar();
+                        accountNo = result?.ToString();
+                    }
+
+                    if (string.IsNullOrEmpty(accountNo))
+                        return (-4, "Account not found for this phone number.");
+
+                    using (SqlCommand cmd = new SqlCommand("sp_ValidateLoanApplication", con))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@AccountNo", accountNo);
+                        cmd.Parameters.AddWithValue("@EntityId", entityId);
+                        cmd.Parameters.AddWithValue("@ProductId", productId);
+                        cmd.Parameters.AddWithValue("@Principle", amount);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                int code = Convert.ToInt32(reader["Code"]);
+                                string message = reader["Response"]?.ToString() ?? "Validation failed.";
+                                log.WriteLog($"[Validate] Phone={phone} EntityId={entityId} ProductId={productId} Amount={amount} Code={code} Msg={message}");
+                                return (code, message);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log.WriteLog($"[Validate] ERROR: Phone={phone} EntityId={entityId} | {ex.Message}");
+            }
+
+            return (-99, "Validation could not be completed. Please try again.");
+        }
+
         public int insertloan(string phone, decimal amount, int productid, int companyid, string constr)
         {
             phone = phone.Length > 12 ? phone.Substring(1, 12) : phone;
