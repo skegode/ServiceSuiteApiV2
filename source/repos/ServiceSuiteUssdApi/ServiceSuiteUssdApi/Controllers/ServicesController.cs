@@ -57,7 +57,21 @@ namespace ServiceSuiteUssdApi.Controllers
                 // PIN setup flow
                 if (level == 0)
                 {
-                    response = "CON Enter new PIN to Proceed\n00. Exit";
+                    int customerStatus = login.checkcustomerExists(ussdRequest.MSISDN, connectionString);
+                    if (customerStatus == -2)
+                    {
+                        string companyName = login.GetCompanyName(ussdRequest.MSISDN, connectionString);
+                        response = $"CON Welcome to {companyName}\nEnter new PIN to Proceed\n00. Exit";
+                    }
+                    else if (customerStatus == -3)
+                    {
+                        string names = loanApplication.GetCompanyNamesList(ussdRequest.MSISDN, connectionString);
+                        response = $"CON Welcome!\nYou are registered with:\n{names}Enter new PIN to Proceed\n00. Exit";
+                    }
+                    else
+                    {
+                        response = "CON Enter new PIN to Proceed\n00. Exit";
+                    }
                     if (!isGoingBack)
                         login.sessionlevel(ussdRequest.SESSION_ID, ussdRequest.MSISDN, connectionString);
                 }

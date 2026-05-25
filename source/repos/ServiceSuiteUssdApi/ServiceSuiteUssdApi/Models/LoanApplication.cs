@@ -11,13 +11,13 @@ namespace ServiceSuiteUssdApi.Models
             int result = 0;
 
             using (var con = new SqlConnection(constr))
-            using (var cmd = new SqlCommand("sp_ussdInsertLoanApplication", con))
+            using (var cmd = new SqlCommand("sp_UssdInsertLoan", con))
             {
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@phone", phone);
-                cmd.Parameters.AddWithValue("@principle", amount);
+                cmd.Parameters.AddWithValue("@Phone", phone);
+                cmd.Parameters.AddWithValue("@Principal", amount);
                 cmd.Parameters.AddWithValue("@ProductId", productid);
-                cmd.Parameters.AddWithValue("@companyid", companyid);
+                cmd.Parameters.AddWithValue("@EntityId", companyid);
                 con.Open();
                 result = Convert.ToInt32(cmd.ExecuteScalar());
             }
@@ -66,7 +66,7 @@ namespace ServiceSuiteUssdApi.Models
             {
                 try
                 {
-                    using (SqlCommand cmd = new SqlCommand("SELECT ProductId, ProductName FROM Products WHERE EntityId = @EntityId", con))
+                    using (SqlCommand cmd = new SqlCommand("SELECT ID AS ProductId, ProductName FROM Products WHERE EntityId = @EntityId", con))
                     {
                         cmd.Parameters.AddWithValue("@EntityId", entityId);
                         con.Open();
@@ -85,6 +85,34 @@ namespace ServiceSuiteUssdApi.Models
             }
 
             return response;
+        }
+
+        public string GetCompanyNamesList(string phone, string constr)
+        {
+            string names = "";
+
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                try
+                {
+                    using (SqlCommand cmd = new SqlCommand("EXEC GetCustomerCompanies @phone", con))
+                    {
+                        cmd.Parameters.AddWithValue("@phone", phone);
+                        con.Open();
+                        using (SqlDataReader read = cmd.ExecuteReader())
+                        {
+                            while (read.Read())
+                                names += $"{read["CompanyName"]}\n";
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error fetching company names: {ex.Message}");
+                }
+            }
+
+            return names;
         }
 
         public string GetCustomerCompanies(string phone, string constr)
