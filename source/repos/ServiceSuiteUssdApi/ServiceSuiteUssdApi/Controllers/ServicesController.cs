@@ -343,13 +343,25 @@ namespace ServiceSuiteUssdApi.Controllers
 
                             if (entityId != 8 && category == 1)
                             {
-                                if (!TryGetInt(parts, 2, out int productId) || !TryGetDecimal(parts, 3, out decimal loanAmount))
+                                if (!TryGetInt(parts, 2, out int productIndex) || !TryGetDecimal(parts, 3, out decimal loanAmount))
                                     return Content("END Invalid input.", "text/plain", Encoding.UTF8);
 
-                                int result = loanApplication.insertloan(ussdRequest.MSISDN, loanAmount, productId, entityId, connectionString);
-                                response = result > 0
-                                    ? "END Your loan application has been submitted successfully."
-                                    : "END Failed to submit loan application. Please try again.";
+                                try
+                                {
+                                    int productId = loanApplication.GetProductIdByIndex(entityId, productIndex, connectionString);
+                                    if (productId == 0)
+                                        return Content("END Invalid product selection. Please try again.", "text/plain", Encoding.UTF8);
+
+                                    int result = loanApplication.insertloan(ussdRequest.MSISDN, loanAmount, productId, entityId, connectionString);
+                                    response = result > 0
+                                        ? "END Your loan application has been submitted successfully."
+                                        : "END Failed to submit loan application. Please try again.";
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogError(ex, "[LoanApp] Submission failed for {Phone} EntityId={EntityId}", ussdRequest.MSISDN, entityId);
+                                    response = "END An error occurred while submitting your application. Please try again.";
+                                }
                             }
                         }
                         else if (customerStatus == -3)
@@ -401,13 +413,25 @@ namespace ServiceSuiteUssdApi.Controllers
 
                             if (selectedEntityId != 8 && category == 1)
                             {
-                                if (!TryGetInt(parts, 3, out int productId) || !TryGetDecimal(parts, 4, out decimal loanAmount))
+                                if (!TryGetInt(parts, 3, out int productIndex) || !TryGetDecimal(parts, 4, out decimal loanAmount))
                                     return Content("END Invalid input.", "text/plain", Encoding.UTF8);
 
-                                int result = loanApplication.insertloan(ussdRequest.MSISDN, loanAmount, productId, entityId, connectionString);
-                                response = result > 0
-                                    ? "END Your loan application has been submitted successfully."
-                                    : "END Failed to submit loan application. Please try again.";
+                                try
+                                {
+                                    int productId = loanApplication.GetProductIdByIndex(entityId, productIndex, connectionString);
+                                    if (productId == 0)
+                                        return Content("END Invalid product selection. Please try again.", "text/plain", Encoding.UTF8);
+
+                                    int result = loanApplication.insertloan(ussdRequest.MSISDN, loanAmount, productId, entityId, connectionString);
+                                    response = result > 0
+                                        ? "END Your loan application has been submitted successfully."
+                                        : "END Failed to submit loan application. Please try again.";
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogError(ex, "[LoanApp] Submission failed for {Phone} EntityId={EntityId}", ussdRequest.MSISDN, entityId);
+                                    response = "END An error occurred while submitting your application. Please try again.";
+                                }
                             }
                         }
                     }

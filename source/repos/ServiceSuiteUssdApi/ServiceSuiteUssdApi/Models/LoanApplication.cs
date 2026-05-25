@@ -9,17 +9,27 @@ namespace ServiceSuiteUssdApi.Models
         {
             phone = phone.Length > 12 ? phone.Substring(1, 12) : phone;
             int result = 0;
+            writelog log = new writelog();
 
-            using (var con = new SqlConnection(constr))
-            using (var cmd = new SqlCommand("sp_UssdInsertLoan", con))
+            try
             {
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@Phone", phone);
-                cmd.Parameters.AddWithValue("@Principal", amount);
-                cmd.Parameters.AddWithValue("@ProductId", productid);
-                cmd.Parameters.AddWithValue("@EntityId", companyid);
-                con.Open();
-                result = Convert.ToInt32(cmd.ExecuteScalar());
+                using (var con = new SqlConnection(constr))
+                using (var cmd = new SqlCommand("sp_UssdInsertLoan", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Phone", phone);
+                    cmd.Parameters.AddWithValue("@Principal", amount);
+                    cmd.Parameters.AddWithValue("@ProductId", productid);
+                    cmd.Parameters.AddWithValue("@EntityId", companyid);
+                    con.Open();
+                    log.WriteLog($"[LoanApp] Submitting: Phone={phone} Amount={amount} ProductId={productid} EntityId={companyid}");
+                    result = Convert.ToInt32(cmd.ExecuteScalar());
+                    log.WriteLog($"[LoanApp] Result: {result}");
+                }
+            }
+            catch (Exception ex)
+            {
+                log.WriteLog($"[LoanApp] ERROR: Phone={phone} Amount={amount} ProductId={productid} EntityId={companyid} | {ex.Message} | {ex.InnerException?.Message}");
             }
 
             return result;
@@ -66,14 +76,15 @@ namespace ServiceSuiteUssdApi.Models
             {
                 try
                 {
-                    using (SqlCommand cmd = new SqlCommand("SELECT ID AS ProductId, ProductName FROM Products WHERE EntityId = @EntityId", con))
+                    using (SqlCommand cmd = new SqlCommand(
+                        "SELECT ROW_NUMBER() OVER (ORDER BY ID) AS Seq, ProductName FROM Products WHERE EntityId = @EntityId", con))
                     {
                         cmd.Parameters.AddWithValue("@EntityId", entityId);
                         con.Open();
                         using (SqlDataReader read = cmd.ExecuteReader())
                         {
                             while (read.Read())
-                                response += $"{read["ProductId"]}. {read["ProductName"]}\n";
+                                response += $"{read["Seq"]}. {read["ProductName"]}\n";
                         }
                     }
                 }
@@ -85,6 +96,30 @@ namespace ServiceSuiteUssdApi.Models
             }
 
             return response;
+        }
+
+        public int GetProductIdByIndex(int entityId, int index, string constr)
+        {
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                try
+                {
+                    using (SqlCommand cmd = new SqlCommand(
+                        "SELECT ID FROM (SELECT ID, ROW_NUMBER() OVER (ORDER BY ID) AS Seq FROM Products WHERE EntityId = @EntityId) t WHERE t.Seq = @Seq", con))
+                    {
+                        cmd.Parameters.AddWithValue("@EntityId", entityId);
+                        cmd.Parameters.AddWithValue("@Seq", index);
+                        con.Open();
+                        var result = cmd.ExecuteScalar();
+                        return result != null ? Convert.ToInt32(result) : 0;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error resolving product id: {ex.Message}");
+                    return 0;
+                }
+            }
         }
 
         public string GetCompanyNamesList(string phone, string constr)
