@@ -4,7 +4,8 @@ namespace ServiceSuiteApiV2
 {
     public interface IAuthService
     {
-        Task<bool>          ValidateClientAsync(string clientId, string clientSecret,string EntityId);
-        Task<TokenResponse> GenerateTokenAsync(string clientId,string EntityId);
+        Task<bool>                  ValidateClientAsync(string clientId, string clientSecret, string entityId);
+        Task<TokenResponse>         GenerateTokenAsync(string clientId, string entityId);
+        Task<CreateClientResponse>  CreateClientAsync(string entityId, string clientName);
     }
 }

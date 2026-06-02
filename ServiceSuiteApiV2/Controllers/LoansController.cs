@@ -69,68 +69,159 @@ public class LoansController : ControllerBase
         });
     }
 
-    [HttpPost("manage")]
-    public async Task<IActionResult> ManageLoan([FromBody] LoanManagementRequest request)
+    //[HttpPost("manage")]
+    //public async Task<IActionResult> ManageLoan([FromBody] LoanManagementRequest request)
+    //{
+    //    try
+    //    {
+    //        request.EntityId = UserEntityId;
+    //        var success = await _loanService.ManageLoanAsync(request);
+    //        return Ok(new ApiResponse<bool> { Success = true, Data = success });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return BadRequest(new ApiResponse<bool> { Success = false, Message = ex.Message });
+    //    }
+    //}
+
+    //[HttpPost("initiate-writeoff")]
+    //public async Task<IActionResult> InitiateWriteoff([FromBody] WriteoffRequest request)
+    //{
+    //    if (string.IsNullOrEmpty(request.LoanId) || request.CurrentOlb <= 0)
+    //    {
+    //        return BadRequest(new ApiResponse<string>
+    //        {
+    //            Success = false,
+    //            Message = "Invalid Loan ID or Loan Balance must be greater than zero."
+    //        });
+    //    }
+
+    //    try
+    //    {
+    //        request.EntityId = UserEntityId;
+    //        var result = await _loanService.InitiateWriteoffAsync(request);
+
+    //        if (result)
+    //        {
+    //            return Ok(new ApiResponse<string>
+    //            {
+    //                Success = true,
+    //                Message = "Loan write-off processed successfully. Balance cleared."
+    //            });
+    //        }
+
+    //        return BadRequest(new ApiResponse<string>
+    //        {
+    //            Success = false,
+    //            Message = "The write-off could not be completed at this time."
+    //        });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return StatusCode(500, new ApiResponse<string>
+    //        {
+    //            Success = false,
+    //            Message = $"Internal Server Error: {ex.Message}"
+    //        });
+    //    }
+    //}
+    [HttpGet("disbursements")]
+    public async Task<IActionResult> GetDisbursedLoans([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
-        try
+        if (startDate > endDate)
+            return BadRequest(new ApiResponse<object> { Success = false, Message = "startDate must be before endDate." });
+
+        var result = await _loanService.GetDisbursedLoansAsync(UserEntityId, startDate, endDate);
+        return Ok(new ApiResponse<List<DisbursedLoanDto>>
         {
-            request.EntityId = UserEntityId; // Enforce the entity context
-            var success = await _loanService.ManageLoanAsync(request);
-            return Ok(new ApiResponse<bool> { Success = true, Data = success });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new ApiResponse<bool> { Success = false, Message = ex.Message });
-        }
+            Success = true,
+            Message = $"{result.Count} disbursement(s) found.",
+            Data = result
+        });
     }
-    [HttpPost("initiate-writeoff")]
-    public async Task<IActionResult> InitiateWriteoff([FromBody] WriteoffRequest request)
+
+    [HttpGet("payments")]
+    public async Task<IActionResult> GetPayments([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
-        // 1. Basic Validation
-        if (string.IsNullOrEmpty(request.LoanId) || request.CurrentOlb <= 0)
+        if (startDate > endDate)
+            return BadRequest(new ApiResponse<object> { Success = false, Message = "startDate must be before endDate." });
+
+        var result = await _loanService.GetPaymentsAsync(UserEntityId, startDate, endDate);
+        return Ok(new ApiResponse<List<PaymentDto>>
         {
-            return BadRequest(new ApiResponse<string>
-            {
-                Success = false,
-                Message = "Invalid Loan ID or Loan Balance must be greater than zero."
-            });
-        }
-
-        try
-        {
-            // 2. Inject Security Context from the JWT Token
-            // These properties should be available if you are using a BaseController 
-            // or extracting claims manually.
-            request.EntityId = UserEntityId;
-
-            // 3. Call the Service
-            var result = await _loanService.InitiateWriteoffAsync(request);
-
-            if (result)
-            {
-                return Ok(new ApiResponse<string>
-                {
-                    Success = true,
-                    Message = "Loan write-off processed successfully. Balance cleared."
-                });
-            }
-
-            return BadRequest(new ApiResponse<string>
-            {
-                Success = false,
-                Message = "The write-off could not be completed at this time."
-            });
-        }
-        catch (Exception ex)
-        {
-            // Log the error (e.g., to Serilog or Application Insights)
-            return StatusCode(500, new ApiResponse<string>
-            {
-                Success = false,
-                Message = $"Internal Server Error: {ex.Message}"
-            });
-        }
+            Success = true,
+            Message = $"{result.Count} payment(s) found.",
+            Data = result
+        });
     }
+
+    [HttpGet("borrower/loans")]
+    public async Task<IActionResult> GetBorrowerLoans([FromQuery] string search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return BadRequest(new ApiResponse<object> { Success = false, Message = "search parameter is required." });
+
+        var result = await _loanService.GetBorrowerLoansAsync(UserEntityId, search.Trim());
+
+        if (result.Count == 0)
+            return NotFound(new ApiResponse<object> { Success = false, Message = "No loans found for the given borrower." });
+
+        return Ok(new ApiResponse<LoanResponse>
+        {
+            Success = true,
+            Message = $"{result.Count} loan(s) found.",
+            Data = result
+        });
+    }
+
+    [HttpGet("borrower/statement")]
+    public async Task<IActionResult> GetBorrowerStatement([FromQuery] string search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return BadRequest(new ApiResponse<BorrowerStatementDto> { Success = false, Message = "search parameter is required." });
+
+        var result = await _loanService.GetBorrowerStatementAsync(UserEntityId, search.Trim());
+
+        if (result == null)
+            return NotFound(new ApiResponse<BorrowerStatementDto> { Success = false, Message = "Borrower not found." });
+
+        return Ok(new ApiResponse<BorrowerStatementDto>
+        {
+            Success = true,
+            Message = $"{result.TotalLines} statement line(s) found.",
+            Data = result
+        });
+    }
+
+    [HttpGet("borrower")]
+    public async Task<IActionResult> GetBorrower([FromQuery] string search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return BadRequest(new ApiResponse<BorrowerDto> { Success = false, Message = "search parameter is required." });
+
+        var result = await _loanService.GetBorrowerAsync(UserEntityId, search.Trim());
+
+        if (result == null)
+            return NotFound(new ApiResponse<BorrowerDto> { Success = false, Message = "Borrower not found." });
+
+        return Ok(new ApiResponse<BorrowerDto> { Success = true, Data = result });
+    }
+
+    [HttpGet("overdue")]
+    public async Task<IActionResult> GetOverdueLoans([FromQuery] int minDays = 1, [FromQuery] int top = 50)
+    {
+        if (minDays < 1)
+            return BadRequest(new ApiResponse<object> { Success = false, Message = "minDays must be at least 1." });
+
+        var result = await _loanService.GetOverdueLoansAsync(UserEntityId, minDays, top);
+        return Ok(new ApiResponse<LoanResponse>
+        {
+            Success = true,
+            Message = $"{result.Count} overdue loan(s) found with at least {minDays} day(s) in arrears.",
+            Data = result
+        });
+    }
+
     [HttpGet("balance/{loanId}")]
     public async Task<IActionResult> GetLoanBalance(string loanId)
     {

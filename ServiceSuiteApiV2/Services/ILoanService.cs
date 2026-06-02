@@ -37,5 +37,35 @@ namespace ServiceSuiteApiV2.Controllers
 
         /// </summary>
         Task<LoanBalanceDto?> GetLoanBalanceAsync(string entityId, string loanId);
+
+        /// <summary>
+        /// Finds a borrower by phone number, national ID, or borrower ID.
+        /// </summary>
+        Task<BorrowerDto?> GetBorrowerAsync(string entityId, string search);
+
+        /// <summary>
+        /// Returns loans disbursed within the given date range.
+        /// </summary>
+        Task<List<DisbursedLoanDto>> GetDisbursedLoansAsync(string entityId, DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// Returns payments received within the given date range (from Transactions DB).
+        /// </summary>
+        Task<List<PaymentDto>> GetPaymentsAsync(string entityId, DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// Returns loans that are past their due date, with optional minimum days in arrears filter.
+        /// </summary>
+        Task<LoanResponse> GetOverdueLoansAsync(string entityId, int minDays, int top);
+
+        /// <summary>
+        /// Returns all loans for a specific borrower matched by phone, national ID, or borrower ID.
+        /// </summary>
+        Task<LoanResponse> GetBorrowerLoansAsync(string entityId, string search);
+
+        /// <summary>
+        /// Returns the statement lines from customerstatement for a borrower matched by phone, national ID, or borrower ID.
+        /// </summary>
+        Task<BorrowerStatementDto?> GetBorrowerStatementAsync(string entityId, string search);
     }
 }

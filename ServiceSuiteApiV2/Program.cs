@@ -1,11 +1,10 @@
 ﻿using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Enable detailed Identity logging for debugging
-Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
 
 // ── 1. Swagger Configuration (Compatible with Microsoft.OpenApi 1.6.x) ──
 builder.Services.AddEndpointsApiExplorer();
@@ -31,6 +30,14 @@ builder.Services.AddSwaggerGen(options =>
 
     options.AddSecurityDefinition("Bearer", securityScheme);
 
+    options.AddSecurityDefinition("X-Admin-Key", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "X-Admin-Key",
+        Description = "Admin key required for /auth/clients",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey
+    });
+
     var securityRequirement = new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
     {
         {
@@ -40,6 +47,17 @@ builder.Services.AddSwaggerGen(options =>
                 {
                     Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
                     Id = "Bearer"
+                }
+            },
+            new List<string>()
+        },
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "X-Admin-Key"
                 }
             },
             new List<string>()
@@ -88,27 +106,42 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ── 4. Dependency Injection & Controllers ─────────────────────
+// ── 4. Rate Limiting ─────────────────────────────────────────
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("token-endpoint", o =>
+    {
+        o.PermitLimit = 5;
+        o.Window = TimeSpan.FromMinutes(1);
+        o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        o.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = 429;
+});
+
+// ── 5. Dependency Injection & Controllers ─────────────────────
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();
+builder.Services.AddHttpClient();
 
 // Using full namespaces for services to avoid folder/namespace confusion
 builder.Services.AddScoped<ServiceSuiteApiV2.Controllers.ILoanService, ServiceSuiteApiV2.LoanService>();
 builder.Services.AddScoped<ServiceSuiteApiV2.IAuthService, ServiceSuiteApiV2.AuthService>();
+builder.Services.AddScoped<ServiceSuiteApiV2.IStkService, ServiceSuiteApiV2.StkService>();
+builder.Services.AddScoped<ServiceSuiteApiV2.ISmsService, ServiceSuiteApiV2.SmsService>();
+builder.Services.AddScoped<ServiceSuiteApiV2.Services.IFraudService, ServiceSuiteApiV2.Services.FraudService>();
 
 var app = builder.Build();
 
 // ── 5. Middleware Pipeline ────────────────────────────────────
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ServiceSuite API V2");
-    });
-}
+    c.SwaggerEndpoint("v1/swagger.json", "ServiceSuite API V2");
+});
 
 app.UseCors("AllowAll");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

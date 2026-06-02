@@ -3,7 +3,7 @@
     public class LoanBalanceDto
     {
 
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         public decimal LoanBalance { get; set; }
     }
 }

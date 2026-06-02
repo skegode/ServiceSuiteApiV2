@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using ServiceSuiteApiV2.Models;
+using ServiceSuiteApiV2;
 
 namespace ServiceSuiteApiV2.Controllers
 {
@@ -8,14 +10,17 @@ namespace ServiceSuiteApiV2.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IConfiguration _config;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IConfiguration config)
         {
             _authService = authService;
+            _config = config;
         }
 
       
         [HttpPost("token")]
+        [EnableRateLimiting("token-endpoint")]
         public async Task<IActionResult> GetToken([FromBody] TokenRequest request)
         {
             // 1. Basic Validation
@@ -41,7 +46,7 @@ namespace ServiceSuiteApiV2.Controllers
                 });
             }
 
-         
+
             var token = await _authService.GenerateTokenAsync(request.ClientId, request.EntityId.ToString());
 
             return Ok(new ApiResponse<TokenResponse>
@@ -51,5 +56,26 @@ namespace ServiceSuiteApiV2.Controllers
                 Data = token
             });
         }
+
+        [HttpPost("clients")]
+        public async Task<IActionResult> CreateClient([FromBody] CreateClientRequest request)
+        {
+            var adminKey = _config["AdminKey"];
+            if (!Request.Headers.TryGetValue("X-Admin-Key", out var providedKey) || providedKey != adminKey)
+                return Unauthorized(new ApiResponse<string> { Success = false, Message = "Invalid or missing X-Admin-Key." });
+
+            if (string.IsNullOrWhiteSpace(request.EntityId) || string.IsNullOrWhiteSpace(request.ClientName))
+                return BadRequest(new ApiResponse<string> { Success = false, Message = "EntityId and ClientName are required." });
+
+            var result = await _authService.CreateClientAsync(request.EntityId, request.ClientName);
+
+            return Ok(new ApiResponse<CreateClientResponse>
+            {
+                Success = true,
+                Message = "Client saved. Store the ClientSecret now — it will not be shown again.",
+                Data = result
+            });
+        }
+
     }
 }

@@ -1,6 +1,8 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using ServiceSuiteApiV2.Models;
@@ -43,6 +45,48 @@ namespace ServiceSuiteApiV2
             return count > 0;
         }
 
+
+        public async Task<CreateClientResponse> CreateClientAsync(string entityId, string clientName)
+        {
+            string connStr = _config.GetConnectionString("DefaultConnection")!;
+
+            var clientId = $"SSA-{DateTime.UtcNow.Year}-{GenerateRandomSegment(8)}";
+            var clientSecret = GenerateSecret(32);
+
+            const string sql = """
+                IF EXISTS (SELECT 1 FROM dbo.ApiClients WHERE EntityId = @EntityId)
+                    UPDATE dbo.ApiClients
+                    SET ClientId = @ClientId, ClientSecret = @ClientSecret, ClientName = @ClientName, UpdatedAt = GETDATE()
+                    WHERE EntityId = @EntityId
+                ELSE
+                    INSERT INTO dbo.ApiClients (ClientId, ClientSecret, ClientName, IsActive, CreatedAt, EntityId)
+                    VALUES (@ClientId, @ClientSecret, @ClientName, 1, GETDATE(), @EntityId)
+                """;
+
+            await using var conn = new SqlConnection(connStr);
+            await conn.ExecuteAsync(sql, new { ClientId = clientId, ClientSecret = clientSecret, ClientName = clientName, EntityId = entityId });
+
+            return new CreateClientResponse
+            {
+                ClientId     = clientId,
+                ClientSecret = clientSecret,
+                ClientName   = clientName,
+                EntityId     = entityId
+            };
+        }
+
+        private static string GenerateRandomSegment(int byteLength)
+        {
+            var bytes = RandomNumberGenerator.GetBytes(byteLength);
+            return Convert.ToHexString(bytes).ToLower();
+        }
+
+        private static string GenerateSecret(int byteLength)
+        {
+            const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+            var bytes = RandomNumberGenerator.GetBytes(byteLength);
+            return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
+        }
 
         public Task<TokenResponse> GenerateTokenAsync(string clientId, string entityId)
         {
