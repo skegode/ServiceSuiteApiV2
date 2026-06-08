@@ -222,6 +222,18 @@ public class LoansController : ControllerBase
         });
     }
 
+    [HttpGet("due-today")]
+    public async Task<IActionResult> GetDueTodayLoans([FromQuery] int top = 500)
+    {
+        var result = await _loanService.GetDueTodayLoansAsync(UserEntityId, top);
+        return Ok(new ApiResponse<List<DueTodayLoanDto>>
+        {
+            Success = true,
+            Message = $"{result.Count} loan(s) due today.",
+            Data = result
+        });
+    }
+
     [HttpGet("balance/{loanId}")]
     public async Task<IActionResult> GetLoanBalance(string loanId)
     {

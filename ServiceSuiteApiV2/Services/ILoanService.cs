@@ -67,5 +67,10 @@ namespace ServiceSuiteApiV2.Controllers
         /// Returns the statement lines from customerstatement for a borrower matched by phone, national ID, or borrower ID.
         /// </summary>
         Task<BorrowerStatementDto?> GetBorrowerStatementAsync(string entityId, string search);
+
+        /// <summary>
+        /// Returns loans that have an installment due today (ExpectedDueDate = today, unpaid).
+        /// </summary>
+        Task<List<DueTodayLoanDto>> GetDueTodayLoansAsync(string entityId, int top = 500);
     }
 }

@@ -574,6 +574,44 @@ namespace ServiceSuiteApiV2
             return new LoanResponse { Count = loans.Count, Data = loans };
         }
 
+        public async Task<List<DueTodayLoanDto>> GetDueTodayLoansAsync(string entityId, int top = 500)
+        {
+            if (!TryParseOrgId(entityId, out int orgId))
+                return new List<DueTodayLoanDto>();
+
+            const string sql = """
+                SELECT TOP (@Top)
+                    CAST(l.id AS NVARCHAR)         AS LoanId,
+                    ISNULL(b.firstName,   '')       AS FirstName,
+                    ISNULL(b.otherName,   '')       AS OtherName,
+                    ISNULL(b.PhoneNumber, '')       AS PhoneNumber,
+                    ISNULL(b.EmailAddress,'')       AS EmailAddress,
+                    ISNULL(b.NationalID,  '')       AS NationalID,
+                    ISNULL(l.AmountToDisburse, 0)   AS AmountToDisburse,
+                    ISNULL(l.LoanBalance, 0)        AS LoanBalance,
+                    SUM(ls.amounttopay)             AS DueTodayAmount,
+                    ISNULL(p.ProductName, '')       AS ProductName,
+                    CAST(GETDATE() AS DATE)         AS DueDate
+                FROM loanSchedule ls
+                INNER JOIN Loans    l  ON l.id        = ls.Loanid
+                LEFT  JOIN Borrowers b ON b.ID        = l.BorrowerId
+                LEFT  JOIN Products  p ON p.ID        = l.ProductId
+                WHERE ls.ExpectedDueDate = CAST(GETDATE() AS DATE)
+                  AND ls.amounttopay > 0
+                  AND ls.status      = 0
+                  AND l.EntityId     = @EntityId
+                  AND l.LoanBalance  > 0
+                GROUP BY l.id, b.firstName, b.otherName, b.PhoneNumber,
+                         b.EmailAddress, b.NationalID,
+                         l.AmountToDisburse, l.LoanBalance, p.ProductName
+                ORDER BY DueTodayAmount DESC
+                """;
+
+            await using var conn = new SqlConnection(ConnectionString);
+            var rows = await conn.QueryAsync<DueTodayLoanDto>(sql, new { EntityId = orgId, Top = top });
+            return rows.AsList();
+        }
+
         // ─── Mapping ─────────────────────────────────────────────────────────────
 
         private static LoanDto MapToLoanDto(SqlDataReader reader) => new()
