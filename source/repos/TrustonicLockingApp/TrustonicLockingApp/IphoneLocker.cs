@@ -32,6 +32,22 @@ namespace TrustonicLockingApp
                 await using var conn = new SqlConnection(_constr);
                 await conn.OpenAsync().ConfigureAwait(false);
 
+                // Devices already recorded in UnknownDevices are excluded from the SELECT below
+                // (nothing left to retry there) but every re-queued row for them would otherwise
+                // sit at IsProcessed = 0 forever, since the SELECT can never pick them up again to
+                // reach the "mark processed" step. Drain those here instead.
+                const string clearKnownUnknownQuery = @"
+            UPDATE p
+            SET p.IsProcessed = 1
+            FROM PhoneLockRequests p
+            WHERE p.Locktypeid = 1
+              AND p.IsProcessed = 0
+              AND EXISTS (SELECT 1 FROM UnknownDevices u WHERE u.SerialNo = p.SerialNo)";
+                await using (var clearCmd = new SqlCommand(clearKnownUnknownQuery, conn))
+                {
+                    await clearCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+                }
+
                 const string selectQuery = @"
             SELECT TOP 50 p.SerialNo, p.EntityId,
                    CASE WHEN ld.stringValue LIKE '%IPHONE%' THEN 1 ELSE 0 END AS IsIPhone,
