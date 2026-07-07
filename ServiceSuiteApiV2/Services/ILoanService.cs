@@ -72,5 +72,10 @@ namespace ServiceSuiteApiV2.Controllers
         /// Returns loans that have an installment due today (ExpectedDueDate = today, unpaid).
         /// </summary>
         Task<List<DueTodayLoanDto>> GetDueTodayLoansAsync(string entityId, int top = 500);
+
+        /// <summary>
+        /// Returns client details and their active loans matched by phone number, national ID, or borrower ID.
+        /// </summary>
+        Task<ClientProfileDto?> GetClientProfileAsync(string entityId, string search);
     }
 }

@@ -207,6 +207,25 @@ public class LoansController : ControllerBase
         return Ok(new ApiResponse<BorrowerDto> { Success = true, Data = result });
     }
 
+    [HttpGet("borrower/profile")]
+    public async Task<IActionResult> GetClientProfile([FromQuery] string search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return BadRequest(new ApiResponse<ClientProfileDto> { Success = false, Message = "search parameter is required." });
+
+        var result = await _loanService.GetClientProfileAsync(UserEntityId, search.Trim());
+
+        if (result == null)
+            return NotFound(new ApiResponse<ClientProfileDto> { Success = false, Message = "Client not found." });
+
+        return Ok(new ApiResponse<ClientProfileDto>
+        {
+            Success = true,
+            Message = $"{result.ActiveLoans.Count} active loan(s) found.",
+            Data = result
+        });
+    }
+
     [HttpGet("overdue")]
     public async Task<IActionResult> GetOverdueLoans([FromQuery] int minDays = 1, [FromQuery] int top = 50)
     {

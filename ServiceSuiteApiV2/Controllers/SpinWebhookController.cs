@@ -24,22 +24,36 @@ namespace ServiceSuiteApiV2.Controllers
         }
 
         [HttpPost("spin-analysis")]
-        public async Task<IActionResult> Receive([FromBody] SpinWebhookPayload payload)
+        public async Task<IActionResult> Receive()
         {
             if (!ValidateBasicAuth(out var authError))
                 return Unauthorized(new { success = false, message = authError });
 
+            var rawBody = await new System.IO.StreamReader(Request.Body).ReadToEndAsync();
+
+            SpinWebhookPayload payload;
+            try { payload = JsonSerializer.Deserialize<SpinWebhookPayload>(rawBody) ?? new SpinWebhookPayload(); }
+            catch { payload = new SpinWebhookPayload(); }
+
             var logEntry = new
             {
                 ReceivedAt = DateTime.UtcNow,
-                Payload = payload
+                RawBody = rawBody,
+                ParsedPayload = payload
             };
 
             var json = JsonSerializer.Serialize(logEntry, _jsonOptions);
-            await AppendToLogFileAsync(json);
 
-            _logger.LogInformation("[SpinWebhook] Received payload for file_unique_id={FileUniqueId} file_type={FileType} state={State}",
-                payload.FileUniqueId, payload.FileType, payload.StateName);
+            try
+            {
+                await AppendToLogFileAsync(json);
+                _logger.LogInformation("[SpinWebhook] Payload logged. file_unique_id={FileUniqueId} file_type={FileType} state={State}",
+                    payload.FileUniqueId, payload.FileType, payload.StateName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[SpinWebhook] Failed to write log file. RawBody={RawBody}", rawBody);
+            }
 
             return Ok(new { success = true, message = "Webhook received." });
         }

@@ -1,0 +1,32 @@
+--------------------------------------------------------------------------------
+{
+  "ReceivedAt": "2026-06-30T10:19:59.0859374Z",
+  "Payload": {
+    "file_unique_id": "test-file-001",
+    "file_type": "mpesa",
+    "phone": "0712345678",
+    "id_number": "12345678",
+    "bank_name": null,
+    "account_number": null,
+    "duration": null,
+    "json_data": null,
+    "timestamp": "2026-06-30T10:00:00Z",
+    "state_name": "processed"
+  }
+}
+--------------------------------------------------------------------------------
+{
+  "ReceivedAt": "2026-06-30T10:21:08.7188246Z",
+  "Payload": {
+    "file_unique_id": "",
+    "file_type": "",
+    "phone": null,
+    "id_number": null,
+    "bank_name": null,
+    "account_number": null,
+    "duration": null,
+    "json_data": null,
+    "timestamp": null,
+    "state_name": null
+  }
+}

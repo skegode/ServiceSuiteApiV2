@@ -612,6 +612,50 @@ namespace ServiceSuiteApiV2
             return rows.AsList();
         }
 
+        public async Task<ClientProfileDto?> GetClientProfileAsync(string entityId, string search)
+        {
+            if (!TryParseOrgId(entityId, out int orgId))
+                return null;
+
+            var multiSql = $"""
+                SELECT TOP 1
+                    CAST(b.ID AS NVARCHAR)     AS BorrowerId,
+                    ISNULL(b.firstName, '')    AS FirstName,
+                    ISNULL(b.otherName, '')    AS OtherName,
+                    ISNULL(b.NationalID, '')   AS NationalID,
+                    ISNULL(b.PhoneNumber, '')  AS PhoneNumber,
+                    ISNULL(b.EmailAddress, '') AS EmailAddress,
+                    ISNULL(b.AccountNo, '')    AS AccountNo,
+                    ISNULL(b.AccountStatus, 0) AS AccountStatus
+                FROM Borrowers b
+                WHERE b.EntityId = @EntityId
+                  AND (b.PhoneNumber = @Search
+                    OR b.NationalID  = @Search
+                    OR CAST(b.ID AS NVARCHAR) = @Search);
+
+                SELECT {LoanColumns}
+                {LoanJoins}
+                WHERE l.LoanBalance > 0
+                  AND ls.amounttopay > 0
+                  AND l.EntityId = @EntityId
+                  AND (b.PhoneNumber = @Search
+                    OR b.NationalID  = @Search
+                    OR CAST(l.BorrowerId AS NVARCHAR) = @Search)
+                {LoanGroupBy}
+                ORDER BY l.id DESC
+                """;
+
+            await using var conn = new SqlConnection(ConnectionString);
+            using var multi = await conn.QueryMultipleAsync(multiSql, new { EntityId = orgId, Search = search });
+
+            var client = await multi.ReadFirstOrDefaultAsync<BorrowerDto>();
+            if (client == null) return null;
+
+            var activeLoans = (await multi.ReadAsync<LoanDto>()).AsList();
+
+            return new ClientProfileDto { Client = client, ActiveLoans = activeLoans };
+        }
+
         // ─── Mapping ─────────────────────────────────────────────────────────────
 
         private static LoanDto MapToLoanDto(SqlDataReader reader) => new()

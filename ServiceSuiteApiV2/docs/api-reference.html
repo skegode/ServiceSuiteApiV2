@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ServiceSuite API V2 — Full API Reference</title>
+<style>
+  /* ── Page layout ── */
+  @page {
+    size: A4;
+    margin: 20mm 18mm 20mm 18mm;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 11px;
+    line-height: 1.6;
+    color: #1a1a2e;
+    background: #fff;
+  }
+
+  /* ── Cover page ── */
+  .cover {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px;
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 60%, #1a1a2e 100%);
+    color: #fff;
+    page-break-after: always;
+  }
+  .cover-logo {
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #e94560;
+    margin-bottom: 32px;
+    font-weight: 700;
+  }
+  .cover h1 {
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    color: #fff;
+  }
+  .cover h1 span { color: #e94560; }
+  .cover-sub {
+    font-size: 14px;
+    color: #a8b2d8;
+    margin-bottom: 48px;
+    line-height: 1.7;
+  }
+  .cover-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    max-width: 420px;
+  }
+  .cover-meta-item {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    padding: 12px 16px;
+  }
+  .cover-meta-item .label {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #e94560;
+    margin-bottom: 4px;
+  }
+  .cover-meta-item .value {
+    font-size: 11px;
+    color: #ccd6f6;
+    font-weight: 600;
+    word-break: break-all;
+  }
+  .cover-footer {
+    position: absolute;
+    bottom: 32px;
+    left: 40px;
+    right: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 16px;
+    color: #8892b0;
+    font-size: 9px;
+  }
+
+  /* ── TOC ── */
+  .toc-page {
+    page-break-after: always;
+    padding: 8px 0;
+  }
+  .toc-page h2 {
+    font-size: 18px;
+    color: #0f3460;
+    margin-bottom: 24px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #e94560;
+  }
+  .toc-section { margin-bottom: 6px; }
+  .toc-section a {
+    display: flex;
+    justify-content: space-between;
+    text-decoration: none;
+    color: #1a1a2e;
+    padding: 5px 0;
+    border-bottom: 1px dotted #d0d7e6;
+    font-size: 11px;
+  }
+  .toc-section a .toc-title { font-weight: 600; }
+  .toc-section a .toc-page-num { color: #8892b0; }
+  .toc-sub {
+    padding-left: 20px;
+  }
+  .toc-sub a {
+    font-size: 10px;
+    color: #555;
+    font-weight: 400;
+    padding: 3px 0;
+  }
+
+  /* ── Section headings ── */
+  h1 {
+    font-size: 22px;
+    color: #0f3460;
+    margin: 28px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid #e94560;
+    page-break-after: avoid;
+  }
+  h2 {
+    font-size: 15px;
+    color: #0f3460;
+    margin: 22px 0 10px;
+    padding: 8px 14px;
+    background: #f0f4ff;
+    border-left: 4px solid #0f3460;
+    border-radius: 0 4px 4px 0;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 12px;
+    color: #16213e;
+    margin: 16px 0 8px;
+    font-weight: 700;
+    page-break-after: avoid;
+  }
+
+  /* ── Endpoint badges ── */
+  .endpoint {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 10px;
+    page-break-inside: avoid;
+  }
+  .method {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    min-width: 50px;
+    text-align: center;
+    color: #fff;
+  }
+  .method.get  { background: #0d7e56; }
+  .method.post { background: #d97706; }
+  .path {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f3460;
+    background: #f0f4ff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #d0d7e6;
+  }
+  .description {
+    font-size: 11px;
+    color: #444;
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+    font-size: 10px;
+    page-break-inside: avoid;
+  }
+  th {
+    background: #0f3460;
+    color: #fff;
+    padding: 7px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 9.5px;
+    letter-spacing: 0.3px;
+  }
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #e8edf5;
+    vertical-align: top;
+    color: #2d3748;
+  }
+  tr:nth-child(even) td { background: #f7f9fc; }
+  td code, th code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #eef2ff;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 9.5px;
+    color: #0f3460;
+  }
+
+  /* ── Code blocks ── */
+  pre {
+    background: #1a1a2e;
+    color: #ccd6f6;
+    padding: 14px 16px;
+    border-radius: 6px;
+    margin: 10px 0 16px;
+    overflow: hidden;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 9.5px;
+    line-height: 1.7;
+    page-break-inside: avoid;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  pre .comment  { color: #637777; }
+  pre .key      { color: #80cbc4; }
+  pre .string   { color: #c3e88d; }
+  pre .number   { color: #f78c6c; }
+  pre .keyword  { color: #e94560; }
+  pre .url      { color: #82aaff; }
+  pre .label    { color: #ffcb6b; }
+
+  /* inline code */
+  p code, li code, td code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #eef2ff;
+    color: #0f3460;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 9.5px;
+    font-weight: 600;
+  }
+
+  /* ── Callout boxes ── */
+  .callout {
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 10px 0 16px;
+    font-size: 10px;
+    page-break-inside: avoid;
+  }
+  .callout.info  { background: #eff8ff; border-left: 4px solid #3b82f6; color: #1e40af; }
+  .callout.warn  { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; }
+  .callout.danger{ background: #fff5f5; border-left: 4px solid #e94560; color: #9b2335; }
+
+  /* ── Auth badge ── */
+  .auth-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .auth-jwt   { background: #dbeafe; color: #1e40af; }
+  .auth-basic { background: #fef3c7; color: #92400e; }
+  .auth-admin { background: #fce7f3; color: #9d174d; }
+  .auth-none  { background: #f0fdf4; color: #166534; }
+
+  /* ── Response badge ── */
+  .resp {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-right: 4px;
+  }
+  .resp-200 { background: #dcfce7; color: #166534; }
+  .resp-400 { background: #fff7ed; color: #9a3412; }
+  .resp-401 { background: #fef3c7; color: #92400e; }
+  .resp-404 { background: #fef2f2; color: #991b1b; }
+  .resp-429 { background: #f5f3ff; color: #5b21b6; }
+  .resp-500 { background: #fef2f2; color: #991b1b; }
+
+  /* ── Misc ── */
+  p  { margin: 6px 0 10px; }
+  ul { margin: 6px 0 10px 18px; }
+  li { margin-bottom: 3px; font-size: 10.5px; }
+  hr { border: none; border-top: 1px solid #e8edf5; margin: 20px 0; }
+  .section-break { page-break-before: always; }
+  .avoid-break   { page-break-inside: avoid; }
+
+  /* ── Running footer ── */
+  @media print {
+    .cover-footer { position: fixed; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ COVER ═══ -->
+<div class="cover">
+  <div class="cover-logo">ServiceSuite Cloud</div>
+  <h1>API V2<br><span>Full Reference</span></h1>
+  <p class="cover-sub">
+    Complete documentation for integrating with the ServiceSuite API V2.<br>
+    Covers authentication, loans, payments, notifications, fraud analytics, and webhooks.
+  </p>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="label">Version</div>
+      <div class="value">v1</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Format</div>
+      <div class="value">JSON / REST</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Base URL</div>
+      <div class="value">collectbox.servicesuitecloud.com /ServiceSuiteApiV2/</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Swagger UI</div>
+      <div class="value">…/swagger/index.html</div>
+    </div>
+  </div>
+  <div class="cover-footer">
+    <span>CONFIDENTIAL — For authorised integrators only</span>
+    <span>Generated June 2026</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ TOC ═══ -->
+<div class="toc-page">
+  <h2>Table of Contents</h2>
+  <div class="toc-section"><a href="#auth"><span class="toc-title">1. Authentication</span><span class="toc-page-num">3</span></a>
+    <div class="toc-sub">
+      <a href="#auth-token"><span>1.1 Get Access Token</span><span class="toc-page-num">3</span></a>
+      <a href="#auth-clients"><span>1.2 Create API Client (Admin)</span><span class="toc-page-num">3</span></a>
+    </div>
+  </div>
+  <div class="toc-section"><a href="#loans"><span class="toc-title">2. Loans</span><span class="toc-page-num">4</span></a>
+    <div class="toc-sub">
+      <a href="#loans-filter"><span>2.1 Get Loans by Filter</span><span class="toc-page-num">4</span></a>
+      <a href="#loans-active"><span>2.2 Get Active Loans</span><span class="toc-page-num">4</span></a>
+      <a href="#loans-by-id"><span>2.3 Get Loan by ID</span><span class="toc-page-num">5</span></a>
+      <a href="#loans-details"><span>2.4 Get Loan Details</span><span class="toc-page-num">5</span></a>
+      <a href="#loans-balance"><span>2.5 Get Loan Balance</span><span class="toc-page-num">5</span></a>
+      <a href="#loans-disbursements"><span>2.6 Get Disbursed Loans</span><span class="toc-page-num">6</span></a>
+      <a href="#loans-payments"><span>2.7 Get Payments</span><span class="toc-page-num">6</span></a>
+      <a href="#loans-overdue"><span>2.8 Get Overdue Loans</span><span class="toc-page-num">7</span></a>
+      <a href="#loans-due-today"><span>2.9 Get Loans Due Today</span><span class="toc-page-num">7</span></a>
+      <a href="#borrower"><span>2.10 Get Borrower</span><span class="toc-page-num">7</span></a>
+      <a href="#borrower-loans"><span>2.11 Get Borrower Loans</span><span class="toc-page-num">8</span></a>
+      <a href="#borrower-statement"><span>2.12 Get Borrower Statement</span><span class="toc-page-num">8</span></a>
+      <a href="#borrower-profile"><span>2.13 Get Client Profile (Combined)</span><span class="toc-page-num">9</span></a>
+    </div>
+  </div>
+  <div class="toc-section"><a href="#payments"><span class="toc-title">3. Payments — M-Pesa STK Push</span><span class="toc-page-num">10</span></a></div>
+  <div class="toc-section"><a href="#notifications"><span class="toc-title">4. Notifications — Send SMS</span><span class="toc-page-num">10</span></a></div>
+  <div class="toc-section"><a href="#fraud"><span class="toc-title">5. Fraud Analytics</span><span class="toc-page-num">11</span></a>
+    <div class="toc-sub">
+      <a href="#fraud-report"><span>5.1 Full Fraud Report</span><span class="toc-page-num">11</span></a>
+      <a href="#fraud-agents"><span>5.2 Agent Signals</span><span class="toc-page-num">11</span></a>
+      <a href="#fraud-shops"><span>5.3 Shop Signals</span><span class="toc-page-num">12</span></a>
+      <a href="#fraud-dup-ids"><span>5.4 Duplicate Identity Detection</span><span class="toc-page-num">12</span></a>
+      <a href="#fraud-stacking"><span>5.5 Loan Stacking Detection</span><span class="toc-page-num">12</span></a>
+      <a href="#fraud-suspicious"><span>5.6 Suspicious Loans</span><span class="toc-page-num">13</span></a>
+      <a href="#fraud-unposted"><span>5.7 Unposted Payment Fraud</span><span class="toc-page-num">13</span></a>
+    </div>
+  </div>
+  <div class="toc-section"><a href="#webhooks"><span class="toc-title">6. Webhooks — Spin Analysis</span><span class="toc-page-num">14</span></a></div>
+  <div class="toc-section"><a href="#schemas"><span class="toc-title">7. Schema Reference</span><span class="toc-page-num">15</span></a></div>
+  <div class="toc-section"><a href="#errors"><span class="toc-title">8. Error Reference</span><span class="toc-page-num">16</span></a></div>
+  <div class="toc-section"><a href="#examples"><span class="toc-title">9. Code Examples</span><span class="toc-page-num">17</span></a></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ 1. AUTH ═══ -->
+<h1 id="auth" class="section-break">1. Authentication</h1>
+
+<p>All endpoints except <code>/auth/token</code> require a <strong>Bearer JWT</strong> in the <code>Authorization</code> header. Tokens are scoped to a specific entity — you can only access data belonging to your own organisation.</p>
+
+<h2 id="auth-token">1.1 Get Access Token <span class="auth-badge auth-none">Public</span></h2>
+<div class="endpoint"><span class="method post">POST</span><span class="path">/auth/token</span></div>
+<p class="description">Generates a JWT access token. Rate-limited to <strong>5 requests per minute</strong>.</p>
+
+<h3>Request Body</h3>
+<pre>{
+  <span class="key">"clientId"</span>:     <span class="string">"your_client_id"</span>,
+  <span class="key">"clientSecret"</span>: <span class="string">"your_client_secret"</span>,
+  <span class="key">"entityId"</span>:     <span class="number">1</span>
+}</pre>
+
+<table>
+  <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>clientId</code></td><td>string</td><td>Yes</td><td>API client identifier provided by the admin</td></tr>
+  <tr><td><code>clientSecret</code></td><td>string</td><td>Yes</td><td>API client secret</td></tr>
+  <tr><td><code>entityId</code></td><td>integer</td><td>Yes</td><td>Your organisation / entity ID</td></tr>
+</table>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"success"</span>: <span class="keyword">true</span>,
+  <span class="key">"message"</span>: <span class="string">"Token generated successfully."</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"accessToken"</span>: <span class="string">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span>,
+    <span class="key">"tokenType"</span>:   <span class="string">"Bearer"</span>,
+    <span class="key">"expiresIn"</span>:   <span class="number">3600</span>
+  }
+}</pre>
+
+<div class="callout info">Include the token in every subsequent request: <code>Authorization: Bearer &lt;accessToken&gt;</code></div>
+
+<h2 id="auth-clients">1.2 Create API Client <span class="auth-badge auth-admin">Admin Only</span></h2>
+<div class="endpoint"><span class="method post">POST</span><span class="path">/auth/clients</span></div>
+<p class="description">Provisions a new API client. Requires the <code>X-Admin-Key</code> header. Not for use by integrators — contact the ServiceSuite team.</p>
+
+<div class="callout warn"><strong>Important:</strong> The <code>clientSecret</code> is only returned once. Store it securely immediately — it cannot be retrieved again.</div>
+
+<!-- ═══════════════════════════════════════════════ 2. LOANS ═══ -->
+<h1 id="loans" class="section-break">2. Loans</h1>
+<p>All loan endpoints require <span class="auth-badge auth-jwt">Bearer JWT</span>. The <code>entityId</code> is automatically derived from your token — you can only access your own entity's data.</p>
+
+<h2 id="loans-filter">2.1 Get Loans by Filter <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method post">POST</span><span class="path">/loans/GetLoansByFilter</span></div>
+<p class="description">Returns active loans matching the supplied filter criteria. All filter fields are optional — omit any field to skip that filter.</p>
+
+<h3>Request Body</h3>
+<pre>{
+  <span class="key">"minDays"</span>:   <span class="number">30</span>,
+  <span class="key">"maxDays"</span>:   <span class="number">90</span>,
+  <span class="key">"minAmount"</span>: <span class="number">5000</span>,
+  <span class="key">"maxAmount"</span>: <span class="number">100000</span>,
+  <span class="key">"minOlb"</span>:    <span class="number">1000</span>,
+  <span class="key">"maxOlb"</span>:    <span class="number">50000</span>
+}</pre>
+
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>minDays</code></td><td>integer?</td><td>Minimum days past due</td></tr>
+  <tr><td><code>maxDays</code></td><td>integer?</td><td>Maximum days past due</td></tr>
+  <tr><td><code>minAmount</code></td><td>decimal?</td><td>Minimum original disbursed amount</td></tr>
+  <tr><td><code>maxAmount</code></td><td>decimal?</td><td>Maximum original disbursed amount</td></tr>
+  <tr><td><code>minOlb</code></td><td>decimal?</td><td>Minimum outstanding loan balance</td></tr>
+  <tr><td><code>maxOlb</code></td><td>decimal?</td><td>Maximum outstanding loan balance</td></tr>
+</table>
+
+<h3><span class="resp resp-200">200</span> Success — returns <code>LoanResponse</code> (count + array of <code>LoanDto</code>)</h3>
+
+<hr>
+
+<h2 id="loans-active">2.2 Get Active Loans <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/ActiveLoans</span></div>
+<p class="description">Returns a list of active loans (balance &gt; 0) with optional keyword search.</p>
+
+<table>
+  <tr><th>Query Param</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>search</code></td><td>string</td><td>No</td><td>—</td><td>Filter by borrower name, phone, or loan ID</td></tr>
+  <tr><td><code>top</code></td><td>integer</td><td>No</td><td><code>20</code></td><td>Maximum records to return</td></tr>
+</table>
+
+<pre><span class="url">GET /loans/ActiveLoans?search=0712345678&amp;top=50</span></pre>
+
+<hr>
+
+<h2 id="loans-by-id">2.3 Get Loan by ID <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/{loanId}</span></div>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/GetLoanById/{loanId}</span></div>
+<p class="description">Returns a single loan by its numeric ID. Returns <code>404</code> if the loan does not exist or belongs to another entity.</p>
+
+<pre><span class="url">GET /loans/4501</span></pre>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"success"</span>: <span class="keyword">true</span>,
+  <span class="key">"message"</span>: <span class="string">"Loan retrieved successfully."</span>,
+  <span class="key">"data"</span>: { <span class="comment">/* LoanDto */</span> }
+}</pre>
+
+<hr>
+
+<h2 id="loans-details">2.4 Get Loan Details <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/details/{loanId}</span></div>
+<p class="description">Returns detailed form/metadata items attached to a loan (custom fields from borrower onboarding forms).</p>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"success"</span>: <span class="keyword">true</span>,
+  <span class="key">"data"</span>: [
+    { <span class="key">"id"</span>: <span class="number">1</span>, <span class="key">"loanId"</span>: <span class="string">"4501"</span>, <span class="key">"itemName"</span>: <span class="string">"Employer Name"</span>, <span class="key">"itemValue"</span>: <span class="string">"ABC Company Ltd"</span> }
+  ]
+}</pre>
+
+<hr>
+
+<h2 id="loans-balance">2.5 Get Loan Balance <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/balance/{loanId}</span></div>
+<p class="description">Returns the current outstanding balance for a single loan.</p>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"success"</span>: <span class="keyword">true</span>,
+  <span class="key">"message"</span>: <span class="string">"Balance retrieved successfully."</span>,
+  <span class="key">"data"</span>: { <span class="key">"id"</span>: <span class="string">"4501"</span>, <span class="key">"loanBalance"</span>: <span class="number">32000.00</span> }
+}</pre>
+
+<hr>
+
+<h2 id="loans-disbursements">2.6 Get Disbursed Loans <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/disbursements</span></div>
+<p class="description">Returns all loans disbursed within a date range, ordered by disbursement date descending.</p>
+
+<table>
+  <tr><th>Query Param</th><th>Type</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>startDate</code></td><td>datetime</td><td>Yes</td><td>Start of range e.g. <code>2024-01-01</code></td></tr>
+  <tr><td><code>endDate</code></td><td>datetime</td><td>Yes</td><td>End of range e.g. <code>2024-01-31</code></td></tr>
+</table>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"success"</span>: <span class="keyword">true</span>,
+  <span class="key">"message"</span>: <span class="string">"5 disbursement(s) found."</span>,
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"loanId"</span>: <span class="string">"4501"</span>, <span class="key">"borrowerName"</span>: <span class="string">"Jane Wanjiru"</span>,
+      <span class="key">"phoneNumber"</span>: <span class="string">"0712345678"</span>, <span class="key">"amountToDisburse"</span>: <span class="number">50000.00</span>,
+      <span class="key">"disbursementDate"</span>: <span class="string">"2024-01-15T00:00:00"</span>, <span class="key">"currentBalance"</span>: <span class="number">32000.00</span>
+    }
+  ]
+}</pre>
+
+<hr>
+
+<h2 id="loans-payments">2.7 Get Payments <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/payments</span></div>
+<p class="description">Returns all payments received within a date range (from the Transactions database), ordered by date descending.</p>
+
+<table>
+  <tr><th>Query Param</th><th>Type</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>startDate</code></td><td>datetime</td><td>Yes</td><td>Start of range</td></tr>
+  <tr><td><code>endDate</code></td><td>datetime</td><td>Yes</td><td>End of range</td></tr>
+</table>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="number">1</span>, <span class="key">"transId"</span>: <span class="string">"QHX7YABCDE"</span>, <span class="key">"transAmount"</span>: <span class="number">2000.00</span>,
+      <span class="key">"billRefNumber"</span>: <span class="string">"4501"</span>, <span class="key">"payerName"</span>: <span class="string">"Jane Wanjiru"</span>,
+      <span class="key">"dateDone"</span>: <span class="string">"2024-01-20T10:34:00"</span>, <span class="key">"isPosted"</span>: <span class="number">1</span>,
+      <span class="key">"transactionType"</span>: <span class="string">"Pay Bill"</span>, <span class="key">"loanId"</span>: <span class="string">"4501"</span>
+    }
+  ]
+}</pre>
+
+<hr>
+
+<h2 id="loans-overdue">2.8 Get Overdue Loans <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/overdue</span></div>
+<p class="description">Returns loans that are past their due date, ordered by days in arrears descending.</p>
+
+<table>
+  <tr><th>Query Param</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>minDays</code></td><td>integer</td><td>No</td><td><code>1</code></td><td>Minimum days past due</td></tr>
+  <tr><td><code>top</code></td><td>integer</td><td>No</td><td><code>50</code></td><td>Maximum records to return</td></tr>
+</table>
+
+<hr>
+
+<h2 id="loans-due-today">2.9 Get Loans Due Today <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/due-today</span></div>
+<p class="description">Returns loans that have an installment scheduled for today (unpaid), ordered by amount due descending.</p>
+
+<table>
+  <tr><th>Query Param</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>top</code></td><td>integer</td><td>No</td><td><code>500</code></td><td>Maximum records to return</td></tr>
+</table>
+
+<h3><span class="resp resp-200">200</span> Sample record</h3>
+<pre>{
+  <span class="key">"loanId"</span>: <span class="string">"4501"</span>, <span class="key">"firstName"</span>: <span class="string">"Jane"</span>, <span class="key">"otherName"</span>: <span class="string">"Wanjiru"</span>,
+  <span class="key">"phoneNumber"</span>: <span class="string">"0712345678"</span>, <span class="key">"loanBalance"</span>: <span class="number">32000.00</span>,
+  <span class="key">"dueTodayAmount"</span>: <span class="number">5000.00</span>, <span class="key">"productName"</span>: <span class="string">"Monthly Loan"</span>,
+  <span class="key">"dueDate"</span>: <span class="string">"2024-06-16T00:00:00"</span>
+}</pre>
+
+<hr>
+
+<h2 id="borrower">2.10 Get Borrower <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/borrower</span></div>
+<p class="description">Looks up a client's personal details by phone number, National ID, or borrower ID.</p>
+
+<table>
+  <tr><th>Query Param</th><th>Type</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>search</code></td><td>string</td><td>Yes</td><td>Phone number, National ID, or Borrower ID</td></tr>
+</table>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"data"</span>: {
+    <span class="key">"borrowerId"</span>: <span class="string">"101"</span>, <span class="key">"firstName"</span>: <span class="string">"Jane"</span>, <span class="key">"otherName"</span>: <span class="string">"Wanjiru"</span>,
+    <span class="key">"nationalID"</span>: <span class="string">"30123456"</span>, <span class="key">"phoneNumber"</span>: <span class="string">"0712345678"</span>,
+    <span class="key">"emailAddress"</span>: <span class="string">"jane@email.com"</span>, <span class="key">"accountNo"</span>: <span class="string">"ACC-00101"</span>,
+    <span class="key">"accountStatus"</span>: <span class="number">1</span>
+  }
+}</pre>
+
+<hr>
+
+<h2 id="borrower-loans">2.11 Get Borrower Loans <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/borrower/loans</span></div>
+<p class="description">Returns all loans (active and historical) for a specific borrower.</p>
+
+<table>
+  <tr><th>Query Param</th><th>Type</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>search</code></td><td>string</td><td>Yes</td><td>Phone number, National ID, or Borrower ID</td></tr>
+</table>
+
+<hr>
+
+<h2 id="borrower-statement">2.12 Get Borrower Statement <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/borrower/statement</span></div>
+<p class="description">Returns the full transaction statement for a borrower — all disbursements, repayments, and adjustments — ordered chronologically.</p>
+
+<table>
+  <tr><th>Query Param</th><th>Type</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>search</code></td><td>string</td><td>Yes</td><td>Phone number, National ID, or Borrower ID</td></tr>
+</table>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"data"</span>: {
+    <span class="key">"borrowerId"</span>: <span class="string">"101"</span>, <span class="key">"borrowerName"</span>: <span class="string">"Jane Wanjiru"</span>,
+    <span class="key">"totalLines"</span>: <span class="number">24</span>,
+    <span class="key">"statement"</span>: [
+      {
+        <span class="key">"id"</span>: <span class="number">1</span>, <span class="key">"loanId"</span>: <span class="string">"4501"</span>, <span class="key">"amount"</span>: <span class="number">50000.00</span>,
+        <span class="key">"transType"</span>: <span class="number">1</span>, <span class="key">"narration"</span>: <span class="string">"Loan Disbursement"</span>,
+        <span class="key">"mpesaRef"</span>: <span class="string">""</span>, <span class="key">"loanBalance"</span>: <span class="number">50000.00</span>,
+        <span class="key">"transactedDate"</span>: <span class="string">"2024-01-15T00:00:00"</span>
+      }
+    ]
+  }
+}</pre>
+
+<table>
+  <tr><th>transType</th><th>Meaning</th></tr>
+  <tr><td><code>1</code></td><td>Disbursement</td></tr>
+  <tr><td><code>2</code></td><td>Repayment</td></tr>
+  <tr><td><code>3</code></td><td>Penalty</td></tr>
+  <tr><td><code>6</code></td><td>Write-off</td></tr>
+</table>
+
+<hr>
+
+<h2 id="borrower-profile">2.13 Get Client Profile — Combined <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/loans/borrower/profile</span></div>
+<p class="description">Returns a client's personal details <strong>and</strong> all their currently active loans in a single call. Best used for client lookup screens.</p>
+
+<table>
+  <tr><th>Query Param</th><th>Type</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>search</code></td><td>string</td><td>Yes</td><td>Phone number, National ID, or Borrower ID</td></tr>
+</table>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"success"</span>: <span class="keyword">true</span>,
+  <span class="key">"message"</span>: <span class="string">"2 active loan(s) found."</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"client"</span>: {
+      <span class="key">"borrowerId"</span>: <span class="string">"101"</span>, <span class="key">"firstName"</span>: <span class="string">"Jane"</span>, <span class="key">"otherName"</span>: <span class="string">"Wanjiru"</span>,
+      <span class="key">"nationalID"</span>: <span class="string">"30123456"</span>, <span class="key">"phoneNumber"</span>: <span class="string">"0712345678"</span>,
+      <span class="key">"emailAddress"</span>: <span class="string">"jane@email.com"</span>, <span class="key">"accountNo"</span>: <span class="string">"ACC-00101"</span>,
+      <span class="key">"accountStatus"</span>: <span class="number">1</span>
+    },
+    <span class="key">"activeLoans"</span>: [
+      {
+        <span class="key">"id"</span>: <span class="string">"4501"</span>, <span class="key">"amountToDisburse"</span>: <span class="number">50000.00</span>,
+        <span class="key">"loanBalance"</span>: <span class="number">32000.00</span>, <span class="key">"arrears"</span>: <span class="number">5000.00</span>,
+        <span class="key">"daysInArrears"</span>: <span class="number">15</span>, <span class="key">"productName"</span>: <span class="string">"Monthly Loan"</span>,
+        <span class="key">"agent"</span>: <span class="string">"John Kamau"</span>
+      }
+    ]
+  }
+}</pre>
+<div class="callout info"><code>activeLoans</code> only includes loans where <code>LoanBalance &gt; 0</code>. Returns an empty array <code>[]</code> if the client has no outstanding loans.</div>
+
+<!-- ═══════════════════════════════════════════════ 3. PAYMENTS ═══ -->
+<h1 id="payments" class="section-break">3. Payments</h1>
+
+<h2>3.1 Initiate M-Pesa STK Push <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method post">POST</span><span class="path">/payments/stk-push</span></div>
+<p class="description">Triggers an M-Pesa STK push prompt on the customer's phone. M-Pesa credentials are configured per entity in the system database.</p>
+
+<h3>Request Body</h3>
+<pre>{
+  <span class="key">"amount"</span>:           <span class="number">2000</span>,
+  <span class="key">"phoneNumber"</span>:      <span class="string">"254712345678"</span>,
+  <span class="key">"accountReference"</span>: <span class="string">"4501"</span>,
+  <span class="key">"transactionDesc"</span>:  <span class="string">"Loan Repayment"</span>
+}</pre>
+
+<table>
+  <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>amount</code></td><td>decimal</td><td>Yes</td><td>Amount to charge. Must be &gt; 0</td></tr>
+  <tr><td><code>phoneNumber</code></td><td>string</td><td>Yes</td><td>International format: <code>254XXXXXXXXX</code></td></tr>
+  <tr><td><code>accountReference</code></td><td>string</td><td>No</td><td>Reference shown on the STK prompt (e.g. loan ID)</td></tr>
+  <tr><td><code>transactionDesc</code></td><td>string</td><td>No</td><td>Description on the prompt. Defaults to <code>"Payment"</code></td></tr>
+</table>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"success"</span>: <span class="keyword">true</span>,
+  <span class="key">"message"</span>: <span class="string">"STK push initiated."</span>,
+  <span class="key">"data"</span>:    <span class="string">"ws_CO_16062024103400001234567890"</span>
+}</pre>
+<div class="callout info"><code>data</code> contains the M-Pesa <code>CheckoutRequestID</code>. Use it to reconcile the payment when the M-Pesa callback arrives.</div>
+
+<!-- ═══════════════════════════════════════════════ 4. NOTIFICATIONS ═══ -->
+<h1 id="notifications" class="section-break">4. Notifications</h1>
+
+<h2>4.1 Send SMS <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method post">POST</span><span class="path">/notifications/sms</span></div>
+<p class="description">Sends an SMS to the specified phone number using the entity's configured SMS provider.</p>
+
+<h3>Request Body</h3>
+<pre>{
+  <span class="key">"message"</span>:      <span class="string">"Dear Jane, your loan balance is KES 32,000. Please pay to avoid penalties."</span>,
+  <span class="key">"phoneNumber"</span>:  <span class="string">"0712345678"</span>,
+  <span class="key">"scheduleDate"</span>: <span class="string">"2024-06-16T10:00:00"</span>
+}</pre>
+
+<table>
+  <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>message</code></td><td>string</td><td>Yes</td><td>SMS body text</td></tr>
+  <tr><td><code>phoneNumber</code></td><td>string</td><td>Yes</td><td>Recipient phone number</td></tr>
+  <tr><td><code>scheduleDate</code></td><td>datetime</td><td>No</td><td>Future datetime for scheduled delivery. Omit to send immediately</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════ 5. FRAUD ═══ -->
+<h1 id="fraud" class="section-break">5. Fraud Analytics</h1>
+<p>All fraud endpoints require <span class="auth-badge auth-jwt">Bearer JWT</span> and are scoped to your entity. Risk levels: <strong>High</strong> | <strong>Medium</strong> | <strong>Low</strong>.</p>
+
+<h2 id="fraud-report">5.1 Full Fraud Report <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/analytics/fraud/report</span></div>
+<p class="description">Runs all fraud signal queries in parallel and returns everything in one response. Use this for dashboard initial load.</p>
+
+<h3><span class="resp resp-200">200</span> Response shape</h3>
+<pre>{
+  <span class="key">"data"</span>: {
+    <span class="key">"summary"</span>: {
+      <span class="key">"highRiskAgentCount"</span>:      <span class="number">2</span>,   <span class="key">"highRiskShopCount"</span>:       <span class="number">1</span>,
+      <span class="key">"duplicateIdentityCount"</span>:  <span class="number">3</span>,   <span class="key">"loanStackingCount"</span>:       <span class="number">5</span>,
+      <span class="key">"zeroPaymentLoanCount"</span>:    <span class="number">8</span>,   <span class="key">"estimatedFraudExposure"</span>:  <span class="number">320000.00</span>,
+      <span class="key">"generatedAt"</span>: <span class="string">"2024-06-16T10:00:00Z"</span>
+    },
+    <span class="key">"agentSignals"</span>:        [ <span class="comment">/* AgentFraudSignal[] */</span> ],
+    <span class="key">"shopSignals"</span>:         [ <span class="comment">/* ShopFraudSignal[] */</span>  ],
+    <span class="key">"duplicateIdentities"</span>: [ <span class="comment">/* DuplicateIdentitySignal[] */</span> ],
+    <span class="key">"loanStacking"</span>:        [ <span class="comment">/* LoanStackingSignal[] */</span>  ],
+    <span class="key">"suspiciousLoans"</span>:     [ <span class="comment">/* SuspiciousLoanSignal[] */</span> ],
+    <span class="key">"paymentFraud"</span>: { <span class="key">"unpostedCount"</span>: <span class="number">2</span>, <span class="key">"unpostedAmount"</span>: <span class="number">15000.00</span> }
+  }
+}</pre>
+
+<hr>
+
+<h2 id="fraud-agents">5.2 Agent Fraud Signals <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/analytics/fraud/agents</span></div>
+<p class="description">Flags collection agents with high default rates, write-off concentration, or arrears-heavy portfolios.</p>
+
+<h3><span class="resp resp-200">200</span> Sample record</h3>
+<pre>{
+  <span class="key">"agentId"</span>: <span class="string">"12"</span>, <span class="key">"agentName"</span>: <span class="string">"John Kamau"</span>,
+  <span class="key">"totalLoans"</span>: <span class="number">50</span>, <span class="key">"defaultedLoans"</span>: <span class="number">20</span>, <span class="key">"defaultRate"</span>: <span class="number">0.40</span>,
+  <span class="key">"totalArrears"</span>: <span class="number">200000.00</span>, <span class="key">"writeoffCount"</span>: <span class="number">5</span>,
+  <span class="key">"riskLevel"</span>: <span class="string">"High"</span>,
+  <span class="key">"flags"</span>: [ <span class="string">"High default rate (40%)"</span>, <span class="string">"Concentrated write-offs"</span> ]
+}</pre>
+
+<hr>
+
+<h2 id="fraud-shops">5.3 Shop / Merchant Fraud Signals <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/analytics/fraud/shops</span></div>
+<p class="description">Groups borrowers by onboarding agent (shop) and flags shops where the majority of clients are defaulting.</p>
+
+<h3><span class="resp resp-200">200</span> Sample record</h3>
+<pre>{
+  <span class="key">"agentName"</span>: <span class="string">"John Kamau Shop"</span>, <span class="key">"uniqueBorrowers"</span>: <span class="number">25</span>,
+  <span class="key">"defaultedBorrowers"</span>: <span class="number">20</span>, <span class="key">"borrowerDefaultRate"</span>: <span class="number">0.80</span>,
+  <span class="key">"totalDisbursed"</span>: <span class="number">250000.00</span>, <span class="key">"portfolioAtRisk"</span>: <span class="number">0.72</span>,
+  <span class="key">"riskLevel"</span>: <span class="string">"High"</span>
+}</pre>
+
+<hr>
+
+<h2 id="fraud-dup-ids">5.4 Duplicate Identity Detection <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/analytics/fraud/borrowers/duplicate-ids</span></div>
+<p class="description">Identifies borrowers sharing the same National ID — a signal of synthetic or stolen identity fraud.</p>
+
+<h3><span class="resp resp-200">200</span> Sample record</h3>
+<pre>{
+  <span class="key">"nationalId"</span>: <span class="string">"30123456"</span>, <span class="key">"borrowerCount"</span>: <span class="number">2</span>,
+  <span class="key">"names"</span>: <span class="string">"Jane Wanjiru, Jane W Mwangi"</span>,
+  <span class="key">"phoneNumbers"</span>: <span class="string">"0712345678, 0798765432"</span>,
+  <span class="key">"totalActiveBalance"</span>: <span class="number">82000.00</span>
+}</pre>
+
+<hr>
+
+<h2 id="fraud-stacking">5.5 Loan Stacking Detection <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/analytics/fraud/borrowers/stacking</span></div>
+<p class="description">Identifies borrowers holding more than one active loan simultaneously — over-borrowing or coordinated fraud.</p>
+
+<h3><span class="resp resp-200">200</span> Sample record</h3>
+<pre>{
+  <span class="key">"borrowerName"</span>: <span class="string">"Jane Wanjiru"</span>, <span class="key">"phoneNumber"</span>: <span class="string">"0712345678"</span>,
+  <span class="key">"activeLoanCount"</span>: <span class="number">2</span>, <span class="key">"totalBalance"</span>: <span class="number">82000.00</span>,
+  <span class="key">"firstLoanDate"</span>: <span class="string">"2023-10-01T00:00:00"</span>, <span class="key">"latestLoanDate"</span>: <span class="string">"2024-01-15T00:00:00"</span>
+}</pre>
+
+<hr>
+
+<h2 id="fraud-suspicious">5.6 Suspicious Loans <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/analytics/fraud/loans/suspicious</span></div>
+<p class="description">Returns overdue loans with little or no repayment activity. Zero-payment loans appear first.</p>
+
+<table>
+  <tr><th>Query Param</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>minDays</code></td><td>integer</td><td>No</td><td><code>30</code></td><td>Minimum days overdue</td></tr>
+</table>
+
+<h3><span class="resp resp-200">200</span> Sample record</h3>
+<pre>{
+  <span class="key">"loanId"</span>: <span class="string">"4501"</span>, <span class="key">"borrowerName"</span>: <span class="string">"Jane Wanjiru"</span>,
+  <span class="key">"amountDisbursed"</span>: <span class="number">50000.00</span>, <span class="key">"daysInArrears"</span>: <span class="number">152</span>,
+  <span class="key">"paymentCount"</span>: <span class="number">0</span>, <span class="key">"totalPaid"</span>: <span class="number">0.00</span>
+}</pre>
+
+<hr>
+
+<h2 id="fraud-unposted">5.7 Unposted Payment Fraud <span class="auth-badge auth-jwt">JWT</span></h2>
+<div class="endpoint"><span class="method get">GET</span><span class="path">/analytics/fraud/payments/unposted</span></div>
+<p class="description">Flags payments received but not posted to a loan for 3+ days — potential staff diversion of funds.</p>
+
+<h3><span class="resp resp-200">200</span> Success</h3>
+<pre>{
+  <span class="key">"data"</span>: {
+    <span class="key">"unpostedCount"</span>:  <span class="number">2</span>,
+    <span class="key">"unpostedAmount"</span>: <span class="number">15000.00</span>,
+    <span class="key">"oldestUnposted"</span>: <span class="string">"2024-06-10T00:00:00"</span>,
+    <span class="key">"newestUnposted"</span>: <span class="string">"2024-06-13T00:00:00"</span>
+  }
+}</pre>
+
+<!-- ═══════════════════════════════════════════════ 6. WEBHOOKS ═══ -->
+<h1 id="webhooks" class="section-break">6. Webhooks</h1>
+
+<h2>6.1 Spin Analysis Webhook <span class="auth-badge auth-basic">Basic Auth</span></h2>
+<div class="endpoint"><span class="method post">POST</span><span class="path">/webhooks/spin-analysis</span></div>
+<p class="description">Receives an analysis result from the Spin financial analysis service. Uses HTTP Basic Auth — <strong>not</strong> Bearer JWT.</p>
+
+<pre><span class="label">Authorization:</span> Basic <span class="string">&lt;base64(username:password)&gt;</span></pre>
+<div class="callout warn">Webhook credentials are configured server-side. Contact the ServiceSuite team to obtain the <code>username</code> and <code>password</code>.</div>
+
+<h3>Request Body</h3>
+<pre>{
+  <span class="key">"file_unique_id"</span>: <span class="string">"abc123xyz"</span>,
+  <span class="key">"file_type"</span>:      <span class="string">"mpesa"</span>,
+  <span class="key">"phone"</span>:          <span class="string">"0712345678"</span>,
+  <span class="key">"id_number"</span>:      <span class="string">"30123456"</span>,
+  <span class="key">"duration"</span>:       <span class="number">6.0</span>,
+  <span class="key">"json_data"</span>:      {},
+  <span class="key">"timestamp"</span>:      <span class="string">"2024-06-16T10:00:00Z"</span>,
+  <span class="key">"state_name"</span>:     <span class="string">"completed"</span>
+}</pre>
+
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>file_unique_id</code></td><td>string</td><td>Unique ID of the analysed file</td></tr>
+  <tr><td><code>file_type</code></td><td>string</td><td><code>"mpesa"</code> or <code>"bank"</code></td></tr>
+  <tr><td><code>phone</code></td><td>string?</td><td>Phone number (M-Pesa statements)</td></tr>
+  <tr><td><code>id_number</code></td><td>string?</td><td>National ID</td></tr>
+  <tr><td><code>bank_name</code></td><td>string?</td><td>Bank name (bank statements)</td></tr>
+  <tr><td><code>account_number</code></td><td>string?</td><td>Bank account number</td></tr>
+  <tr><td><code>duration</code></td><td>decimal?</td><td>Statement period in months</td></tr>
+  <tr><td><code>json_data</code></td><td>object?</td><td>Raw analysis output from Spin</td></tr>
+  <tr><td><code>timestamp</code></td><td>datetime?</td><td>Time the analysis completed</td></tr>
+  <tr><td><code>state_name</code></td><td>string?</td><td>e.g. <code>"completed"</code>, <code>"failed"</code></td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════ 7. SCHEMAS ═══ -->
+<h1 id="schemas" class="section-break">7. Schema Reference</h1>
+
+<h2>Response Envelope — <code>ApiResponse&lt;T&gt;</code></h2>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>success</code></td><td>boolean</td><td><code>true</code> on success, <code>false</code> on error</td></tr>
+  <tr><td><code>message</code></td><td>string</td><td>Human-readable status message</td></tr>
+  <tr><td><code>data</code></td><td>T | null</td><td>Response payload. <code>null</code> on error</td></tr>
+</table>
+
+<h2>LoanDto</h2>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>id</code></td><td>string</td><td>Loan ID</td></tr>
+  <tr><td><code>borrowerId</code></td><td>string</td><td>Borrower ID</td></tr>
+  <tr><td><code>firstName</code></td><td>string</td><td>Borrower first name</td></tr>
+  <tr><td><code>otherName</code></td><td>string</td><td>Borrower other name</td></tr>
+  <tr><td><code>phoneNumber</code></td><td>string</td><td>Borrower phone number</td></tr>
+  <tr><td><code>emailAddress</code></td><td>string</td><td>Borrower email</td></tr>
+  <tr><td><code>nationalId</code></td><td>string</td><td>National ID</td></tr>
+  <tr><td><code>amountToDisburse</code></td><td>decimal</td><td>Original disbursed amount</td></tr>
+  <tr><td><code>repaymentPeriod</code></td><td>string</td><td>Loan product name</td></tr>
+  <tr><td><code>loanBalance</code></td><td>decimal</td><td>Current outstanding balance</td></tr>
+  <tr><td><code>penalty</code></td><td>decimal</td><td>Accrued penalty</td></tr>
+  <tr><td><code>arrears</code></td><td>decimal</td><td>Total overdue amount</td></tr>
+  <tr><td><code>daysInArrears</code></td><td>integer</td><td>Days past due</td></tr>
+  <tr><td><code>outsourcedAmount</code></td><td>decimal</td><td>Sum of all unpaid installments</td></tr>
+  <tr><td><code>productName</code></td><td>string</td><td>Loan product</td></tr>
+  <tr><td><code>agent</code></td><td>string</td><td>Collection agent full name</td></tr>
+  <tr><td><code>agentId</code></td><td>string</td><td>Collection agent ID</td></tr>
+</table>
+
+<h2>BorrowerDto</h2>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>borrowerId</code></td><td>string</td><td>Unique borrower ID</td></tr>
+  <tr><td><code>firstName</code></td><td>string</td><td>First name</td></tr>
+  <tr><td><code>otherName</code></td><td>string</td><td>Other name / surname</td></tr>
+  <tr><td><code>nationalID</code></td><td>string</td><td>National ID</td></tr>
+  <tr><td><code>phoneNumber</code></td><td>string</td><td>Phone number</td></tr>
+  <tr><td><code>emailAddress</code></td><td>string</td><td>Email address</td></tr>
+  <tr><td><code>accountNo</code></td><td>string</td><td>Account number</td></tr>
+  <tr><td><code>accountStatus</code></td><td>integer</td><td><code>1</code> = Active, <code>0</code> = Inactive</td></tr>
+</table>
+
+<h2>PaymentDto</h2>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>id</code></td><td>integer</td><td>Payment record ID</td></tr>
+  <tr><td><code>transId</code></td><td>string</td><td>M-Pesa transaction ID</td></tr>
+  <tr><td><code>transAmount</code></td><td>decimal</td><td>Payment amount</td></tr>
+  <tr><td><code>billRefNumber</code></td><td>string</td><td>Bill reference (loan account)</td></tr>
+  <tr><td><code>payerName</code></td><td>string</td><td>Name of the payer</td></tr>
+  <tr><td><code>dateDone</code></td><td>datetime</td><td>Payment date</td></tr>
+  <tr><td><code>isPosted</code></td><td>integer</td><td><code>1</code> = posted, <code>0</code> = pending</td></tr>
+  <tr><td><code>transactionType</code></td><td>string</td><td>e.g. <code>"Pay Bill"</code></td></tr>
+  <tr><td><code>loanId</code></td><td>string?</td><td>Associated loan ID</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════ 8. ERRORS ═══ -->
+<h1 id="errors" class="section-break">8. Error Reference</h1>
+
+<table>
+  <tr><th>Status</th><th>Meaning</th><th>When it occurs</th></tr>
+  <tr><td><span class="resp resp-400">400</span></td><td>Bad Request</td><td>Missing required field or invalid parameter value</td></tr>
+  <tr><td><span class="resp resp-401">401</span></td><td>Unauthorized</td><td>Missing, expired, or invalid token; wrong Basic Auth credentials</td></tr>
+  <tr><td><span class="resp resp-404">404</span></td><td>Not Found</td><td>Resource does not exist or belongs to a different entity</td></tr>
+  <tr><td><span class="resp resp-429">429</span></td><td>Too Many Requests</td><td>Rate limit exceeded on <code>/auth/token</code> (5 req / min)</td></tr>
+  <tr><td><span class="resp resp-500">500</span></td><td>Internal Server Error</td><td>Unexpected server-side error — check server logs</td></tr>
+</table>
+
+<p>All error responses follow the same envelope:</p>
+<pre>{
+  <span class="key">"success"</span>: <span class="keyword">false</span>,
+  <span class="key">"message"</span>: <span class="string">"Description of what went wrong."</span>,
+  <span class="key">"data"</span>:    <span class="keyword">null</span>
+}</pre>
+
+<!-- ═══════════════════════════════════════════════ 9. EXAMPLES ═══ -->
+<h1 id="examples" class="section-break">9. Code Examples</h1>
+
+<h2>cURL — Full Flow</h2>
+<pre><span class="comment"># Step 1 — Get token</span>
+TOKEN=$(curl -s -X POST \
+  https://collectbox.servicesuitecloud.com/ServiceSuiteApiV2/auth/token \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d <span class="string">'{"clientId":"your_id","clientSecret":"your_secret","entityId":1}'</span> \
+  | jq -r <span class="string">'.data.accessToken'</span>)
+
+<span class="comment"># Step 2 — Client profile</span>
+curl -X GET \
+  <span class="string">"https://collectbox.servicesuitecloud.com/ServiceSuiteApiV2/loans/borrower/profile?search=0712345678"</span> \
+  -H <span class="string">"Authorization: Bearer $TOKEN"</span>
+
+<span class="comment"># Step 3 — STK push</span>
+curl -X POST \
+  https://collectbox.servicesuitecloud.com/ServiceSuiteApiV2/payments/stk-push \
+  -H <span class="string">"Authorization: Bearer $TOKEN"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d <span class="string">'{"amount":2000,"phoneNumber":"254712345678","accountReference":"4501"}'</span>
+
+<span class="comment"># Step 4 — Fraud report</span>
+curl -X GET \
+  https://collectbox.servicesuitecloud.com/ServiceSuiteApiV2/analytics/fraud/report \
+  -H <span class="string">"Authorization: Bearer $TOKEN"</span></pre>
+
+<h2>JavaScript (fetch)</h2>
+<pre><span class="keyword">const</span> BASE = <span class="string">"https://collectbox.servicesuitecloud.com/ServiceSuiteApiV2"</span>;
+
+<span class="keyword">async function</span> getToken() {
+  <span class="keyword">const</span> res = <span class="keyword">await</span> fetch(`${BASE}/auth/token`, {
+    method: <span class="string">"POST"</span>,
+    headers: { <span class="string">"Content-Type"</span>: <span class="string">"application/json"</span> },
+    body: JSON.stringify({ clientId: <span class="string">"your_id"</span>, clientSecret: <span class="string">"your_secret"</span>, entityId: <span class="number">1</span> })
+  });
+  <span class="keyword">const</span> { data } = <span class="keyword">await</span> res.json();
+  <span class="keyword">return</span> data.accessToken;
+}
+
+<span class="keyword">async function</span> apiGet(token, path) {
+  <span class="keyword">return</span> fetch(`${BASE}${path}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  }).then(r => r.json());
+}
+
+<span class="comment">// Usage</span>
+<span class="keyword">const</span> token   = <span class="keyword">await</span> getToken();
+<span class="keyword">const</span> profile = <span class="keyword">await</span> apiGet(token, <span class="string">"/loans/borrower/profile?search=0712345678"</span>);
+<span class="keyword">const</span> overdue = <span class="keyword">await</span> apiGet(token, <span class="string">"/loans/overdue?minDays=30"</span>);
+<span class="keyword">const</span> fraud   = <span class="keyword">await</span> apiGet(token, <span class="string">"/analytics/fraud/report"</span>);</pre>
+
+<h2>C# (HttpClient)</h2>
+<pre><span class="keyword">using var</span> http = <span class="keyword">new</span> HttpClient {
+  BaseAddress = <span class="keyword">new</span> Uri(<span class="string">"https://collectbox.servicesuitecloud.com/ServiceSuiteApiV2/"</span>)
+};
+
+<span class="comment">// Authenticate</span>
+<span class="keyword">var</span> auth = <span class="keyword">await</span> http.PostAsJsonAsync(<span class="string">"auth/token"</span>,
+  <span class="keyword">new</span> { clientId = <span class="string">"your_id"</span>, clientSecret = <span class="string">"your_secret"</span>, entityId = <span class="number">1</span> });
+<span class="keyword">var</span> token = (await auth.Content.ReadFromJsonAsync&lt;ApiResponse&lt;TokenResponse&gt;&gt;())!.Data!.AccessToken;
+http.DefaultRequestHeaders.Authorization = <span class="keyword">new</span>(<span class="string">"Bearer"</span>, token);
+
+<span class="comment">// Call endpoints</span>
+<span class="keyword">var</span> profile = <span class="keyword">await</span> http.GetFromJsonAsync&lt;ApiResponse&lt;ClientProfileDto&gt;&gt;(
+  <span class="string">"loans/borrower/profile?search=0712345678"</span>);
+<span class="keyword">var</span> fraud   = <span class="keyword">await</span> http.GetFromJsonAsync&lt;ApiResponse&lt;FraudAnalyticsReport&gt;&gt;(
+  <span class="string">"analytics/fraud/report"</span>);</pre>
+
+<h2>PHP (cURL)</h2>
+<pre><span class="keyword">&lt;?php</span>
+<span class="label">$base</span> = <span class="string">"https://collectbox.servicesuitecloud.com/ServiceSuiteApiV2"</span>;
+
+<span class="keyword">function</span> apiPost(<span class="label">$base</span>, <span class="label">$token</span>, <span class="label">$path</span>, <span class="label">$body</span>) {
+  <span class="label">$ch</span> = curl_init(<span class="string">"$base$path"</span>);
+  curl_setopt_array(<span class="label">$ch</span>, [
+    CURLOPT_POST           => <span class="keyword">true</span>,
+    CURLOPT_RETURNTRANSFER => <span class="keyword">true</span>,
+    CURLOPT_HTTPHEADER     => [<span class="string">"Authorization: Bearer $token"</span>, <span class="string">"Content-Type: application/json"</span>],
+    CURLOPT_POSTFIELDS     => json_encode(<span class="label">$body</span>)
+  ]);
+  <span class="label">$r</span> = curl_exec(<span class="label">$ch</span>); curl_close(<span class="label">$ch</span>);
+  <span class="keyword">return</span> json_decode(<span class="label">$r</span>, <span class="keyword">true</span>);
+}
+
+<span class="keyword">function</span> apiGet(<span class="label">$base</span>, <span class="label">$token</span>, <span class="label">$path</span>) {
+  <span class="label">$ch</span> = curl_init(<span class="string">"$base$path"</span>);
+  curl_setopt_array(<span class="label">$ch</span>, [CURLOPT_RETURNTRANSFER => <span class="keyword">true</span>,
+    CURLOPT_HTTPHEADER => [<span class="string">"Authorization: Bearer $token"</span>]]);
+  <span class="label">$r</span> = curl_exec(<span class="label">$ch</span>); curl_close(<span class="label">$ch</span>);
+  <span class="keyword">return</span> json_decode(<span class="label">$r</span>, <span class="keyword">true</span>);
+}
+
+<span class="label">$auth</span>  = apiPost(<span class="label">$base</span>, <span class="string">""</span>, <span class="string">"/auth/token"</span>,
+         [<span class="string">"clientId"</span>=><span class="string">"your_id"</span>, <span class="string">"clientSecret"</span>=><span class="string">"your_secret"</span>, <span class="string">"entityId"</span>=><span class="number">1</span>]);
+<span class="label">$token</span> = <span class="label">$auth</span>[<span class="string">"data"</span>][<span class="string">"accessToken"</span>];
+
+<span class="label">$profile</span> = apiGet(<span class="label">$base</span>, <span class="label">$token</span>, <span class="string">"/loans/borrower/profile?search=0712345678"</span>);
+<span class="label">$fraud</span>   = apiGet(<span class="label">$base</span>, <span class="label">$token</span>, <span class="string">"/analytics/fraud/report"</span>);</pre>
+
+<br><br>
+<hr>
+<p style="text-align:center; color:#8892b0; font-size:9px; margin-top:16px;">
+  ServiceSuite API V2 &mdash; Full Reference &mdash; June 2026 &mdash; CONFIDENTIAL
+</p>
+
+</body>
+</html>
