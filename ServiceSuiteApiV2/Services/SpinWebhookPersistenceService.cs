@@ -76,6 +76,13 @@ namespace ServiceSuiteApiV2.Services
         {
             await using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
+            await NormalizeExistingPayloadAsync(conn, payloadId, jsonData);
+        }
+
+        // Overload for bulk backfill tooling: reuses an already-open connection so a large batch
+        // doesn't pay a fresh TCP/TLS/login handshake to the remote SQL Server per row.
+        public static async Task NormalizeExistingPayloadAsync(SqlConnection conn, int payloadId, JsonElement jsonData)
+        {
             await using var tx = (SqlTransaction)await conn.BeginTransactionAsync();
 
             try
@@ -133,7 +140,8 @@ namespace ServiceSuiteApiV2.Services
             }
 
             var body = lastData is JsonElement ld2 ? GetObj(ld2, "body") : null;
-            if (body is not JsonElement b) return;
+            if (body is JsonElement b)
+            {
 
             var kplc = GetObj(b, "kplc_account");
             if (kplc is JsonElement k)
@@ -144,46 +152,6 @@ namespace ServiceSuiteApiV2.Services
                     tx);
             }
 
-            // information / boundaries / scoring_payload / peak_inflow_dates are siblings of "body" under
-            // "last_data" in the vendor payload, not children of "body" itself.
-            var information = GetObj(lastData, "information");
-            if (information is JsonElement info)
-            {
-                await conn.ExecuteAsync("""
-                    INSERT INTO dbo.SpinWebhookInformation
-                        (PayloadId, CustomerNames, IdentityNumber, Email, PhoneNumber, DateOfStatement, StatementPeriod, VehicleRegNo, HighestLocation, CustomerBankAccount)
-                    VALUES
-                        (@PayloadId, @CustomerNames, @IdentityNumber, @Email, @PhoneNumber, @DateOfStatement, @StatementPeriod, @VehicleRegNo, @HighestLocation, @CustomerBankAccount)
-                    """, new
-                {
-                    PayloadId = payloadId,
-                    CustomerNames = GetStr(info, "customer_names"),
-                    IdentityNumber = GetStr(info, "identity_number"),
-                    Email = GetStr(info, "email"),
-                    PhoneNumber = GetStr(info, "phone_number"),
-                    DateOfStatement = GetStr(info, "date_of_statement"),
-                    StatementPeriod = GetStr(info, "statement_period"),
-                    VehicleRegNo = GetStr(b, "vehicle_reg_no"),
-                    HighestLocation = GetStr(b, "highest_location"),
-                    CustomerBankAccount = GetStr(b, "customer_bank_account")
-                }, tx);
-            }
-
-            var boundaries = GetObj(lastData, "boundaries");
-            if (boundaries is JsonElement bd)
-            {
-                await conn.ExecuteAsync("""
-                    INSERT INTO dbo.SpinWebhookBoundaries (PayloadId, SubmissionAgeInDays, ProcessedOnAgeInDays, ReceivedOn, DurationInMonths)
-                    VALUES (@PayloadId, @SubmissionAgeInDays, @ProcessedOnAgeInDays, @ReceivedOn, @DurationInMonths)
-                    """, new
-                {
-                    PayloadId = payloadId,
-                    SubmissionAgeInDays = GetInt(bd, "submission_age_in_days"),
-                    ProcessedOnAgeInDays = GetInt(bd, "processed_on_age_in_days"),
-                    ReceivedOn = GetStr(bd, "received_on"),
-                    DurationInMonths = GetInt(bd, "duration_in_months")
-                }, tx);
-            }
 
             var loansData = GetObj(b, "loans_data");
             if (loansData is JsonElement ln)
@@ -454,6 +422,50 @@ namespace ServiceSuiteApiV2.Services
                         }
                     }
                 }
+            }
+
+            } // end if (body is JsonElement b)
+
+            // information / boundaries / scoring_payload / peak_inflow_dates are siblings of "body" under
+            // "last_data" in the vendor payload (not children of "body"), so they must not be gated on
+            // "body" being present — some statements are missing sections or have body entirely absent.
+            var information = GetObj(lastData, "information");
+            if (information is JsonElement info)
+            {
+                await conn.ExecuteAsync("""
+                    INSERT INTO dbo.SpinWebhookInformation
+                        (PayloadId, CustomerNames, IdentityNumber, Email, PhoneNumber, DateOfStatement, StatementPeriod, VehicleRegNo, HighestLocation, CustomerBankAccount)
+                    VALUES
+                        (@PayloadId, @CustomerNames, @IdentityNumber, @Email, @PhoneNumber, @DateOfStatement, @StatementPeriod, @VehicleRegNo, @HighestLocation, @CustomerBankAccount)
+                    """, new
+                {
+                    PayloadId = payloadId,
+                    CustomerNames = GetStr(info, "customer_names"),
+                    IdentityNumber = GetStr(info, "identity_number"),
+                    Email = GetStr(info, "email"),
+                    PhoneNumber = GetStr(info, "phone_number"),
+                    DateOfStatement = GetStr(info, "date_of_statement"),
+                    StatementPeriod = GetStr(info, "statement_period"),
+                    VehicleRegNo = body is JsonElement bv ? GetStr(bv, "vehicle_reg_no") : null,
+                    HighestLocation = body is JsonElement bh ? GetStr(bh, "highest_location") : null,
+                    CustomerBankAccount = body is JsonElement bc ? GetStr(bc, "customer_bank_account") : null
+                }, tx);
+            }
+
+            var boundaries = GetObj(lastData, "boundaries");
+            if (boundaries is JsonElement bd)
+            {
+                await conn.ExecuteAsync("""
+                    INSERT INTO dbo.SpinWebhookBoundaries (PayloadId, SubmissionAgeInDays, ProcessedOnAgeInDays, ReceivedOn, DurationInMonths)
+                    VALUES (@PayloadId, @SubmissionAgeInDays, @ProcessedOnAgeInDays, @ReceivedOn, @DurationInMonths)
+                    """, new
+                {
+                    PayloadId = payloadId,
+                    SubmissionAgeInDays = GetInt(bd, "submission_age_in_days"),
+                    ProcessedOnAgeInDays = GetInt(bd, "processed_on_age_in_days"),
+                    ReceivedOn = GetStr(bd, "received_on"),
+                    DurationInMonths = GetInt(bd, "duration_in_months")
+                }, tx);
             }
 
             if (lastData is JsonElement ldPeak && GetArr(ldPeak, "peak_inflow_dates") is JsonElement peakArr)
