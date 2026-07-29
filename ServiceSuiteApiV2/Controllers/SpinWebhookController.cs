@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using ServiceSuiteApiV2.Models;
+using ServiceSuiteApiV2.Services;
 
 namespace ServiceSuiteApiV2.Controllers
 {
@@ -11,16 +12,18 @@ namespace ServiceSuiteApiV2.Controllers
     {
         private readonly IConfiguration _config;
         private readonly ILogger<SpinWebhookController> _logger;
+        private readonly ISpinWebhookPersistenceService _persistenceService;
 
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             WriteIndented = true
         };
 
-        public SpinWebhookController(IConfiguration config, ILogger<SpinWebhookController> logger)
+        public SpinWebhookController(IConfiguration config, ILogger<SpinWebhookController> logger, ISpinWebhookPersistenceService persistenceService)
         {
             _config = config;
             _logger = logger;
+            _persistenceService = persistenceService;
         }
 
         [HttpPost("spin-analysis")]
@@ -53,6 +56,15 @@ namespace ServiceSuiteApiV2.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[SpinWebhook] Failed to write log file. RawBody={RawBody}", rawBody);
+            }
+
+            try
+            {
+                await _persistenceService.SavePayloadAsync(payload, rawBody, logEntry.ReceivedAt);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[SpinWebhook] Failed to save payload to database. file_unique_id={FileUniqueId}", payload.FileUniqueId);
             }
 
             return Ok(new { success = true, message = "Webhook received." });

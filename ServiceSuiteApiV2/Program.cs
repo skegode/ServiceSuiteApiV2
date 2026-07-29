@@ -130,6 +130,7 @@ builder.Services.AddScoped<ServiceSuiteApiV2.IAuthService, ServiceSuiteApiV2.Aut
 builder.Services.AddScoped<ServiceSuiteApiV2.IStkService, ServiceSuiteApiV2.StkService>();
 builder.Services.AddScoped<ServiceSuiteApiV2.ISmsService, ServiceSuiteApiV2.SmsService>();
 builder.Services.AddScoped<ServiceSuiteApiV2.Services.IFraudService, ServiceSuiteApiV2.Services.FraudService>();
+builder.Services.AddScoped<ServiceSuiteApiV2.Services.ISpinWebhookPersistenceService, ServiceSuiteApiV2.Services.SpinWebhookPersistenceService>();
 
 var app = builder.Build();
 
