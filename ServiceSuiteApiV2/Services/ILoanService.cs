@@ -77,5 +77,17 @@ namespace ServiceSuiteApiV2.Controllers
         /// Returns client details and their active loans matched by phone number, national ID, or borrower ID.
         /// </summary>
         Task<ClientProfileDto?> GetClientProfileAsync(string entityId, string search);
+
+        /// <summary>
+        /// Registers a new borrower via dbo.NewBorrower. Returns BorrowerId &lt;= 0 on decline
+        /// (-1 = duplicate phone/national ID, -2 = fails age requirements).
+        /// </summary>
+        Task<NewBorrowerResultDto> AddNewBorrowerAsync(NewBorrowerRequest request);
+
+        /// <summary>
+        /// Records a backdated/historical loan via dbo.sp_InsertLoan, with a caller-supplied
+        /// BorrowDate and TransactionRef (used to import loan history for a borrower).
+        /// </summary>
+        Task<HistoryLoanResultDto> AddHistoryLoanAsync(HistoryLoanRequest request);
     }
 }

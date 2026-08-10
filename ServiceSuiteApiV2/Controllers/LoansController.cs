@@ -253,6 +253,89 @@ public class LoansController : ControllerBase
         });
     }
 
+    [HttpPost("borrower")]
+    public async Task<IActionResult> AddNewBorrower([FromBody] NewBorrowerRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.FirstName) || string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            return BadRequest(new ApiResponse<NewBorrowerResultDto>
+            {
+                Success = false,
+                Message = "FirstName and PhoneNumber are required.",
+                Data = new NewBorrowerResultDto { Success = false, ErrorCode = "MISSING_REQUIRED_FIELD", Message = "FirstName and PhoneNumber are required." }
+            });
+        }
+
+        request.EntityId = UserEntityId;
+
+        try
+        {
+            var result = await _loanService.AddNewBorrowerAsync(request);
+
+            if (!result.Success)
+                return BadRequest(new ApiResponse<NewBorrowerResultDto> { Success = false, Message = result.Message, Data = result });
+
+            return Ok(new ApiResponse<NewBorrowerResultDto> { Success = true, Message = result.Message, Data = result });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<string> { Success = false, Message = $"Error creating borrower: {ex.Message}" });
+        }
+    }
+
+    [HttpPost("history")]
+    public async Task<IActionResult> AddHistoryLoan([FromBody] HistoryLoanRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.BorrowerId) || string.IsNullOrWhiteSpace(request.ProductId) || request.Principal <= 0)
+        {
+            const string msg = "BorrowerId, ProductId, and a positive Principal are required.";
+            return BadRequest(new ApiResponse<HistoryLoanResultDto>
+            {
+                Success = false,
+                Message = msg,
+                Data = new HistoryLoanResultDto { Success = false, ErrorCode = "MISSING_REQUIRED_FIELD", Response = msg }
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.TransactionRef))
+        {
+            const string msg = "TransactionRef is required for a history loan.";
+            return BadRequest(new ApiResponse<HistoryLoanResultDto>
+            {
+                Success = false,
+                Message = msg,
+                Data = new HistoryLoanResultDto { Success = false, ErrorCode = "MISSING_TRANSACTION_REF", Response = msg }
+            });
+        }
+
+        if (request.BorrowDate == default || request.BorrowDate > DateTime.UtcNow)
+        {
+            const string msg = "BorrowDate is required and cannot be in the future.";
+            return BadRequest(new ApiResponse<HistoryLoanResultDto>
+            {
+                Success = false,
+                Message = msg,
+                Data = new HistoryLoanResultDto { Success = false, ErrorCode = "INVALID_BORROW_DATE", Response = msg }
+            });
+        }
+
+        request.EntityId = UserEntityId;
+
+        try
+        {
+            var result = await _loanService.AddHistoryLoanAsync(request);
+
+            if (!result.Success)
+                return BadRequest(new ApiResponse<HistoryLoanResultDto> { Success = false, Message = result.Response, Data = result });
+
+            return Ok(new ApiResponse<HistoryLoanResultDto> { Success = true, Message = result.Response, Data = result });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<string> { Success = false, Message = $"Error creating history loan: {ex.Message}" });
+        }
+    }
+
     [HttpGet("balance/{loanId}")]
     public async Task<IActionResult> GetLoanBalance(string loanId)
     {

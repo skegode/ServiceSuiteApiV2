@@ -656,6 +656,110 @@ namespace ServiceSuiteApiV2
             return new ClientProfileDto { Client = client, ActiveLoans = activeLoans };
         }
 
+        public async Task<NewBorrowerResultDto> AddNewBorrowerAsync(NewBorrowerRequest request)
+        {
+            if (!TryParseOrgId(request.EntityId, out int orgId))
+                return new NewBorrowerResultDto { BorrowerId = 0, Success = false, ErrorCode = "INVALID_ENTITY_ID", Message = "EntityId must be numeric." };
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@BorrowerFirstName", request.FirstName);
+            parameters.Add("@BorrowerOtherName", request.OtherName);
+            parameters.Add("@AccountNo", request.AccountNo);
+            parameters.Add("@NationalID", request.NationalID);
+            parameters.Add("@PhoneNumber", request.PhoneNumber);
+            parameters.Add("@EmailAddress", request.EmailAddress);
+            parameters.Add("@PostalAddress", request.PostalAddress);
+            parameters.Add("@PhysicalAddress", request.PhysicalAddress);
+            parameters.Add("@DOB", request.DOB);
+            parameters.Add("@Gender", request.Gender);
+            parameters.Add("@CreditScore", request.CreditScore);
+            parameters.Add("@LoanLimit", request.LoanLimit);
+            parameters.Add("@EntityId", orgId);
+            parameters.Add("@EntityAgent", request.UserId);
+            parameters.Add("@CreatedBy", request.UserId);
+            parameters.Add("@BorrowerId", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+            await using var conn = new SqlConnection(ConnectionString);
+            await conn.ExecuteAsync("NewBorrower", parameters, commandType: CommandType.StoredProcedure);
+
+            var borrowerId = parameters.Get<int>("@BorrowerId");
+
+            return borrowerId switch
+            {
+                -1 => new NewBorrowerResultDto { BorrowerId = borrowerId, Success = false, ErrorCode = "DUPLICATE_BORROWER", Message = "A borrower with this phone number or national ID already exists." },
+                -2 => new NewBorrowerResultDto { BorrowerId = borrowerId, Success = false, ErrorCode = "AGE_INELIGIBLE", Message = "Borrower does not meet the age requirements." },
+                > 0 => new NewBorrowerResultDto { BorrowerId = borrowerId, Success = true, Message = "Borrower created successfully." },
+                _ => new NewBorrowerResultDto { BorrowerId = borrowerId, Success = false, ErrorCode = "UNKNOWN_ERROR", Message = "Borrower could not be created." }
+            };
+        }
+
+        public async Task<HistoryLoanResultDto> AddHistoryLoanAsync(HistoryLoanRequest request)
+        {
+            if (!TryParseOrgId(request.EntityId, out int orgId))
+                return Declined("INVALID_ENTITY_ID", "EntityId must be numeric.");
+            if (!int.TryParse(request.UserId, out int userId))
+                return Declined("INVALID_USER_ID", "UserId must be numeric.");
+            if (!TryParseLoanId(request.BorrowerId, out int borrowerId))
+                return Declined("INVALID_BORROWER_ID", "BorrowerId must be numeric.");
+            if (!int.TryParse(request.ProductId, out int productId))
+                return Declined("INVALID_PRODUCT_ID", "ProductId must be numeric.");
+
+            int? guarantorId = null;
+            if (!string.IsNullOrWhiteSpace(request.GuarantorId))
+            {
+                if (!int.TryParse(request.GuarantorId, out int gId))
+                    return Declined("INVALID_GUARANTOR_ID", "GuarantorId must be numeric.");
+                guarantorId = gId;
+            }
+
+            await using var conn = new SqlConnection(ConnectionString);
+
+            // dbo.LoanValidation is the same check sp_InsertLoan runs internally, but the proc only
+            // logs a DeclinedLoans row and returns no result set on failure — it doesn't say *why*.
+            // Checking it ourselves first lets us surface the specific reason.
+            var validationCode = await conn.QuerySingleAsync<int>(
+                "SELECT dbo.LoanValidation(@BorrowerId, @ProductId, @Principal)",
+                new { BorrowerId = borrowerId, ProductId = productId, request.Principal });
+
+            // ApplicationType 3 marks this as a historical/backfilled loan (same channel code
+            // sp_InsertHistoryLoanLoan used to hardcode), distinguishing it from live applications.
+            var result = await conn.QuerySingleOrDefaultAsync<HistoryLoanResultDto>("sp_InsertLoan", new
+            {
+                BorrowerId = borrowerId,
+                request.Principal,
+                ProductId = productId,
+                Entity = orgId,
+                GurantorId = guarantorId,
+                CreatedBy = userId,
+                request.ActualAssetPrice,
+                request.BorrowDate,
+                ApplicationType = 3,
+                TransactionRef = request.TransactionRef,
+                request.SelectedPeriod,
+                request.SelectedOptionalFeeIds
+            }, commandType: CommandType.StoredProcedure);
+
+            if (result == null)
+            {
+                return validationCode switch
+                {
+                    1 => Declined("ACTIVE_LOAN_EXISTS", "Borrower already has an active loan with an outstanding balance."),
+                    2 => Declined("INSUFFICIENT_ACCOUNT_BALANCE", "Borrower's account balance is insufficient to cover this product's upfront charges."),
+                    _ => Declined("LOAN_DECLINED", "Loan was declined by validation.")
+                };
+            }
+
+            result.Success = true;
+            return result;
+        }
+
+        private static HistoryLoanResultDto Declined(string errorCode, string message) => new()
+        {
+            Success = false,
+            ErrorCode = errorCode,
+            Response = message
+        };
+
         // ─── Mapping ─────────────────────────────────────────────────────────────
 
         private static LoanDto MapToLoanDto(SqlDataReader reader) => new()
